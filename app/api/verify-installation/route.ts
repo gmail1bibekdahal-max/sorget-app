@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
     const scriptMatches = [...html.matchAll(scriptRegex)];
     const scriptInstalled = scriptMatches.length > 0;
 
-    // Search for data-tracking-id in script tags or inline configs
-    const trackingIdRegex = /data-tracking-id=["'](attr_[a-z0-9]+)["']/i;
+    // Search for data-tracking-id or legacy data-project-id in script tags or inline configs
+    const trackingIdRegex = /(?:data-tracking-id|data-project-id)=["'](attr_[a-z0-9]+)["']/i;
     const trackingIdMatch = html.match(trackingIdRegex);
     const foundTrackingId = trackingIdMatch ? trackingIdMatch[1] : null;
 

@@ -176,21 +176,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Trigger webhooks asynchronously in background
+  // Trigger webhooks in background
   try {
     const { dispatchLeadWebhook } = await import("@/lib/webhooks");
-    dispatchLeadWebhook(inserted, project.id, supabase).catch((err: any) => {
-      console.error("[api/leads] Webhook dispatch error:", err.message);
-    });
-  } catch {}
+    await dispatchLeadWebhook(inserted, project.id, supabase);
+  } catch (err: any) {
+    console.error("[api/leads] Webhook dispatch error:", err.message);
+  }
 
-  // Trigger HubSpot CRM sync asynchronously in background (non-blocking)
+  // Trigger HubSpot CRM sync (errors caught so lead response is never blocked)
   try {
     const { triggerHubSpotSync } = await import("@/lib/crm-sync");
-    triggerHubSpotSync(inserted, project, supabase).catch((err: any) => {
-      console.error("[api/leads] HubSpot sync error:", err.message);
-    });
-  } catch {}
+    await triggerHubSpotSync(inserted, project, supabase);
+  } catch (err: any) {
+    console.error("[api/leads] HubSpot sync error:", err.message);
+  }
 
   return NextResponse.json(
     { success: true, tracking_id: project.tracking_id, lead: inserted },
