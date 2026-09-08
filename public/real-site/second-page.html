@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attributer Demo Site — Page 2 (Cross-Page Test)</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif; background: #0f172a; color: #e2e8f0; padding: 24px; max-width: 900px; margin: 0 auto; line-height: 1.5; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 16px; margin-bottom: 24px; }
+        h1 { font-size: 1.25rem; color: #38bdf8; font-weight: 700; }
+        nav a { color: #94a3b8; text-decoration: none; font-size: 0.9rem; margin-left: 16px; font-weight: 500; }
+        nav a:hover { color: #38bdf8; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        h2 { font-size: 0.95rem; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+        pre { background: #090d16; border: 1px solid #1e293b; border-radius: 6px; padding: 14px; font-size: 0.82rem; color: #7dd3fc; overflow-x: auto; white-space: pre-wrap; font-family: ui-monospace, monospace; }
+        .field { margin-bottom: 12px; }
+        label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600; }
+        input[type="text"], input[type="email"] { width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid #475569; border-radius: 6px; color: #f8fafc; font-family: inherit; font-size: 0.9rem; }
+        input:focus { outline: none; border-color: #38bdf8; }
+        .btn { display: inline-block; padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn:hover { background: #1d4ed8; }
+        .btn-danger { background: #991b1b; }
+        .btn-danger:hover { background: #b91c1c; }
+        .actions { display: flex; gap: 10px; margin-top: 12px; }
+        .result { margin-top: 14px; display: none; }
+        .result.visible { display: block; }
+        .url-box { background: #0b1120; border: 1px solid #1e293b; border-radius: 6px; padding: 10px 14px; font-size: 0.8rem; font-family: monospace; color: #38bdf8; word-break: break-all; margin-bottom: 12px; }
+    </style>
+
+    <!-- Attributer Public Distributable Script -->
+    <script src="../attributer.js" data-project-id="attr_p01jg97"></script>
+</head>
+<body>
+
+<header>
+    <h1>Attributer Demo Site — Page 2</h1>
+    <nav>
+        <a href="index.html">← Back to Home</a>
+        <a href="second-page.html" style="color: #38bdf8;">Page 2</a>
+    </nav>
+</header>
+
+<!-- Current First-Touch Attribution JSON -->
+<div class="card">
+    <h2>Current Browser URL</h2>
+    <div class="url-box" id="current-url">Reading URL…</div>
+
+    <h2>Stored First-Touch Attribution</h2>
+    <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:10px;">
+        Even without UTM or Google Ads parameters on this page, the original first-touch attribution is retained.
+    </p>
+    <pre id="stored-json">Loading attribution…</pre>
+    <div class="actions">
+        <button class="btn btn-danger" id="clear-storage">Clear Storage + Reload</button>
+    </div>
+</div>
+
+<!-- Page 2 Form -->
+<div class="card">
+    <h2>Page 2 Form (Auto-Populated with First Touch)</h2>
+    <form id="sales-form">
+        <div class="field">
+            <label>Name</label>
+            <input id="sales-name" name="name" type="text" value="Sarah Connor" required>
+        </div>
+        <div class="field">
+            <label>Email</label>
+            <input id="sales-email" name="email" type="email" value="sarah@cyberdyne.com" required>
+        </div>
+        <div class="field">
+            <label>Company</label>
+            <input id="sales-company" name="company" type="text" value="Cyberdyne Systems" required>
+        </div>
+
+        <!-- Hidden Attribution Fields (Attributer Standard) -->
+        <input type="hidden" name="channel">
+        <input type="hidden" name="channeldrilldown1">
+        <input type="hidden" name="channeldrilldown2">
+        <input type="hidden" name="channeldrilldown3">
+        <input type="hidden" name="landingpage">
+        <input type="hidden" name="landingpagegroup">
+        <input type="hidden" name="source">
+        <input type="hidden" name="medium">
+        <input type="hidden" name="campaign">
+        <input type="hidden" name="content">
+        <input type="hidden" name="term">
+        <input type="hidden" name="gclid">
+        <input type="hidden" name="gbraid">
+        <input type="hidden" name="gad_campaignid">
+        <input type="hidden" name="gad_source">
+
+        <button class="btn" type="submit">Submit Page 2 Form</button>
+    </form>
+
+    <div class="result" id="sales-result">
+        <label style="color:#4ade80;margin-top:10px;">Submitted Payload (JSON):</label>
+        <pre id="sales-result-json"></pre>
+    </div>
+</div>
+
+<script>
+    // Render URL and stored attribution JSON
+    function renderState() {
+        document.getElementById("current-url").textContent = window.location.href;
+        var stored = Attributer.getStoredAttribution();
+        document.getElementById("stored-json").textContent = JSON.stringify(stored, null, 2);
+    }
+    renderState();
+
+    // Clear storage
+    document.getElementById("clear-storage").addEventListener("click", function () {
+        Attributer.clearFirstTouch();
+        location.reload();
+    });
+
+    // Form submit handler connected to POST /api/leads
+    var form = document.getElementById("sales-form");
+    var resultEl = document.getElementById("sales-result");
+    var jsonEl = document.getElementById("sales-result-json");
+
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var fd = new FormData(form);
+        var stored = (typeof Attributer !== "undefined" && Attributer.getStoredAttribution) ? Attributer.getStoredAttribution() : null;
+
+        var projectId = (typeof Attributer !== "undefined" && Attributer.getProjectId && Attributer.getProjectId()) || "attr_p01jg97";
+
+        var payload = {
+            project_id: projectId,
+            name: fd.get("name") || null,
+            email: fd.get("email") || null,
+            channel: fd.get("channel") || (stored && stored.channel) || null,
+            channeldrilldown1: fd.get("channeldrilldown1") || (stored && (stored.channeldrilldown1 || stored.channel_drilldown1)) || null,
+            channeldrilldown2: fd.get("channeldrilldown2") || (stored && (stored.channeldrilldown2 || stored.channel_drilldown2)) || null,
+            channeldrilldown3: fd.get("channeldrilldown3") || (stored && (stored.channeldrilldown3 || stored.channel_drilldown3)) || null,
+            landingpage: fd.get("landingpage") || (stored && (stored.landingpage || stored.landing_page)) || null,
+            landingpagegroup: fd.get("landingpagegroup") || (stored && (stored.landingpagegroup || stored.landing_page_group)) || null,
+            source: fd.get("source") || (stored && stored.source) || null,
+            medium: fd.get("medium") || (stored && stored.medium) || null,
+            campaign: fd.get("campaign") || (stored && stored.campaign) || null,
+            content: fd.get("content") || (stored && stored.content) || null,
+            term: fd.get("term") || (stored && stored.term) || null,
+            gclid: fd.get("gclid") || (stored && stored.gclid) || null,
+            gbraid: fd.get("gbraid") || (stored && stored.gbraid) || null,
+            gad_campaignid: fd.get("gad_campaignid") || (stored && stored.gad_campaignid) || null,
+            gad_source: fd.get("gad_source") || (stored && stored.gad_source) || null,
+            referrer: (stored && stored.referrer) || document.referrer || null,
+            landingUrl: (stored && stored.landingUrl) || window.location.href,
+            landingPage: (stored && stored.landingPage) || window.location.pathname
+        };
+
+        var apiUrl = (window.location.port === "8080" ? "http://localhost:3001" : "") + "/api/leads";
+
+        jsonEl.textContent = "Submitting lead to " + apiUrl + "…\n\n" + JSON.stringify(payload, null, 2);
+        resultEl.classList.add("visible");
+
+        fetch(apiUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(function (res) {
+            return res.json().then(function (data) {
+                return { status: res.status, ok: res.ok, data: data };
+            });
+        })
+        .then(function (resObj) {
+            jsonEl.textContent = JSON.stringify({
+                status: resObj.status,
+                ok: resObj.ok,
+                response: resObj.data,
+                submittedPayload: payload
+            }, null, 2);
+        })
+        .catch(function (err) {
+            jsonEl.textContent = JSON.stringify({
+                error: "Network/Request error: " + err.message,
+                submittedPayload: payload
+            }, null, 2);
+        });
+    });
+</script>
+
+</body>
+</html>

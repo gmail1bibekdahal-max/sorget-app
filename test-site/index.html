@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Attributer Test Site</title>
+    <style>
+        body { font-family: monospace; padding: 24px; background: #111; color: #eee; }
+        h1 { font-size: 1.1rem; margin-bottom: 16px; color: #aaa; letter-spacing: 0.05em; }
+        h2 { font-size: 0.85rem; color: #666; margin: 24px 0 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+        pre { background: #1a1a1a; border: 1px solid #333; padding: 16px; border-radius: 6px; font-size: 0.85rem; line-height: 1.6; color: #7dd3fc; }
+        form { background: #1a1a1a; border: 1px solid #333; padding: 20px; border-radius: 6px; max-width: 400px; }
+        label { display: block; margin-bottom: 12px; font-size: 0.82rem; color: #aaa; }
+        label input { display: block; margin-top: 4px; width: 100%; padding: 6px 10px; background: #222; border: 1px solid #444; color: #eee; border-radius: 4px; font-family: monospace; }
+        button { margin-top: 14px; padding: 8px 20px; background: #4f46e5; color: white; border: none; border-radius: 5px; cursor: pointer; font-family: monospace; font-size: 0.85rem; }
+        button:hover { background: #4338ca; }
+        .hidden-values { margin-top: 16px; font-size: 0.78rem; color: #64748b; }
+        .hidden-values span { color: #7dd3fc; }
+        hr { border-color: #222; margin: 24px 0; }
+        .btn-clear { background: #7f1d1d; font-size: 0.75rem; padding: 5px 12px; margin-top: 0; }
+        .btn-clear:hover { background: #991b1b; }
+    </style>
+</head>
+<body>
+
+<h1>ATTRIBUTER TEST SITE</h1>
+
+<h2>First-Touch Attribution</h2>
+<pre id="output">Loading…</pre>
+
+<button class="btn-clear" id="clear-btn">Clear Storage + Reload</button>
+
+<hr>
+
+<h2>Lead Form (Hidden Attribution Fields)</h2>
+<form id="lead-form">
+    <label>
+        Name
+        <input name="name" type="text" placeholder="Your name">
+    </label>
+    <label>
+        Email
+        <input name="email" type="email" placeholder="you@example.com">
+    </label>
+
+    <input type="hidden" name="channel">
+    <input type="hidden" name="source">
+    <input type="hidden" name="medium">
+    <input type="hidden" name="campaign">
+    <input type="hidden" name="content">
+    <input type="hidden" name="term">
+    <input type="hidden" name="gclid">
+    <input type="hidden" name="gbraid">
+    <input type="hidden" name="gad_campaignid">
+    <input type="hidden" name="gad_source">
+
+    <button type="submit">Submit</button>
+</form>
+
+<div class="hidden-values" id="hidden-display"></div>
+
+<hr>
+
+<h2>Dynamic Form Test</h2>
+<p style="font-size:0.78rem;color:#555;margin:0 0 10px;">Verifies that Attributer populates forms created after the page has loaded.</p>
+<button id="add-form-btn">Add Dynamic Form</button>
+<div id="dynamic-forms"></div>
+
+<script type="module">
+    import { initializeAttribution } from "../src/attribution.js";
+    import { initializeFormAttribution } from "../src/form-attribution.js";
+    import { clearFirstTouch } from "../src/storage.js";
+
+    // Expose clear helper
+    window.clearFirstTouch = clearFirstTouch;
+
+    // Initialize attribution engine
+    const attribution = initializeAttribution();
+
+    // Display attribution JSON
+    document.getElementById("output").textContent = JSON.stringify(attribution, null, 2);
+
+    // Populate all existing forms with first-touch attribution
+    initializeFormAttribution();
+
+    // Show hidden field values below the form
+    function refreshHiddenDisplay() {
+        const form = document.getElementById("lead-form");
+        const fields = ["channel", "source", "medium", "campaign", "content", "term", "gclid", "gbraid", "gad_campaignid", "gad_source"];
+        const lines = fields.map(f => {
+            const el = form.querySelector(`input[name="${f}"]`);
+            const val = el ? el.value : "(missing)";
+            return `${f.padEnd(10)} = <span>${val || "(empty)"}</span>`;
+        });
+        document.getElementById("hidden-display").innerHTML =
+            "<strong>Hidden field values:</strong><br><br>" + lines.join("<br>");
+    }
+    refreshHiddenDisplay();
+
+    // Intercept form submission and display the full payload including attribution fields
+    document.getElementById("lead-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        refreshHiddenDisplay();
+
+        // Collect ALL form fields (visible + hidden) using the browser's FormData API
+        const formData = new FormData(e.target);
+        const payload = {};
+        for (const [key, value] of formData.entries()) {
+            payload[key] = value;
+        }
+
+        alert("Form submitted!\n\n" + JSON.stringify(payload, null, 2));
+    });
+
+    // Clear storage
+    document.getElementById("clear-btn").addEventListener("click", () => {
+        clearFirstTouch();
+        location.reload();
+    });
+
+    // Dynamic form test
+    document.getElementById("add-form-btn").addEventListener("click", () => {
+        const form = document.createElement("form");
+        form.style.cssText = "background:#1a1a1a;border:1px solid #333;padding:16px;border-radius:6px;margin-top:12px;font-size:0.82rem;color:#aaa;";
+        form.innerHTML = `
+            <div style="margin-bottom:8px;color:#666">Dynamic form (added after init)</div>
+            <input type="hidden" name="source">
+            <input type="hidden" name="channel">
+            <input type="hidden" name="medium">
+            <div id="dyn-display-${Date.now()}" style="margin-top:8px;color:#7dd3fc;"></div>
+        `;
+        document.getElementById("dynamic-forms").appendChild(form);
+
+        // Show what got populated
+        setTimeout(() => {
+            const d = form.querySelector("div:last-child");
+            const src = form.querySelector("input[name=source]").value;
+            const ch  = form.querySelector("input[name=channel]").value;
+            const med = form.querySelector("input[name=medium]").value;
+            d.textContent = `source=${src || "(empty)"} | channel=${ch || "(empty)"} | medium=${med || "(empty)"}`;
+        }, 50);
+    });
+</script>
+
+</body>
+</html>
