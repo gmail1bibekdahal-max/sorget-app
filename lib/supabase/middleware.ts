@@ -34,8 +34,15 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Root route: app entry point strictly redirects based on auth status
+  if (pathname === "/") {
+    const targetUrl = request.nextUrl.clone();
+    targetUrl.pathname = user ? "/dashboard" : "/login";
+    return NextResponse.redirect(targetUrl);
+  }
+
   // Protected routes: redirect unauthenticated users to /login
-  const protectedPaths = ["/dashboard"];
+  const protectedPaths = ["/dashboard", "/onboarding"];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
 
   if (isProtected && !user) {

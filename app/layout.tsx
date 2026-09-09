@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Attributer — Marketing Attribution Platform",
+  title: "Sorget — Marketing Attribution Platform",
   description:
-    "Track where your leads come from. Attributer captures UTM parameters, Google Ads click IDs, and first-touch attribution data for every form submission.",
+    "Track where your leads come from. Sorget captures UTM parameters, Google Ads click IDs, and first-touch attribution data for every form submission.",
 };
 
 export default function RootLayout({
