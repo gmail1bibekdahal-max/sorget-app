@@ -51,10 +51,10 @@ export default async function SupportPage() {
       <main style={{ maxWidth: "900px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
         {/* Header */}
         <div style={{ marginBottom: "2.5rem" }}>
-          <h1 style={{ fontSize: "1.875rem", fontWeight: 700, margin: "0 0 0.5rem 0" }}>
+          <h1 style={{ fontSize: "1.875rem", fontWeight: 700, margin: "0 0 0.5rem 0", color: "var(--sorget-dark, #3A313C)" }}>
             Support &amp; Documentation
           </h1>
-          <p style={{ color: "var(--text-secondary, #94a3b8)", margin: 0, fontSize: "0.95rem" }}>
+          <p style={{ color: "var(--sorget-grey, #64748b)", margin: 0, fontSize: "0.95rem" }}>
             Guides, hidden form field references, and troubleshooting help for Sorget.
           </p>
         </div>
@@ -67,15 +67,16 @@ export default async function SupportPage() {
             style={{
               maxWidth: "100%",
               padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
-            <h2 style={{ fontSize: "1.25rem", margin: "0 0 1rem 0", color: "#ffffff" }}>
+            <h2 style={{ fontSize: "1.25rem", margin: "0 0 1rem 0", color: "var(--sorget-dark, #3A313C)" }}>
               How Sorget Works
             </h2>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", lineHeight: 1.6, marginBottom: "1.25rem" }}>
+            <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.875rem", lineHeight: 1.6, marginBottom: "1.25rem" }}>
               Sorget is built on a straightforward product philosophy: <strong>collect and pass attribution data into your CRM and forms; analyze it where your revenue data lives.</strong>
             </p>
 
@@ -86,34 +87,34 @@ export default async function SupportPage() {
                 gap: "1rem",
               }}
             >
-              <div style={{ background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: "8px" }}>
+              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: "1.25rem" }}>1️⃣</span>
-                <div style={{ fontWeight: 600, color: "#ffffff", marginTop: "0.5rem" }}>Visitor Lands</div>
-                <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                <div style={{ fontWeight: 600, color: "var(--sorget-dark, #3A313C)", marginTop: "0.5rem" }}>Visitor Lands</div>
+                <div style={{ fontSize: "0.8125rem", color: "var(--sorget-grey, #64748b)", marginTop: "0.25rem", lineHeight: 1.4 }}>
                   Script parses UTMs, GCLID, and organic referrers, persisting them in cookies/localStorage.
                 </div>
               </div>
 
-              <div style={{ background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: "8px" }}>
+              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: "1.25rem" }}>2️⃣</span>
-                <div style={{ fontWeight: 600, color: "#ffffff", marginTop: "0.5rem" }}>Fills Hidden Fields</div>
-                <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                <div style={{ fontWeight: 600, color: "var(--sorget-dark, #3A313C)", marginTop: "0.5rem" }}>Fills Hidden Fields</div>
+                <div style={{ fontSize: "0.8125rem", color: "var(--sorget-grey, #64748b)", marginTop: "0.25rem", lineHeight: 1.4 }}>
                   When forms render, Sorget populates the 6 standard hidden fields automatically.
                 </div>
               </div>
 
-              <div style={{ background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: "8px" }}>
+              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: "1.25rem" }}>3️⃣</span>
-                <div style={{ fontWeight: 600, color: "#ffffff", marginTop: "0.5rem" }}>Form Submitted</div>
-                <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                <div style={{ fontWeight: 600, color: "var(--sorget-dark, #3A313C)", marginTop: "0.5rem" }}>Form Submitted</div>
+                <div style={{ fontSize: "0.8125rem", color: "var(--sorget-grey, #64748b)", marginTop: "0.25rem", lineHeight: 1.4 }}>
                   Attribution travels alongside form responses to your backend, email, or webhook.
                 </div>
               </div>
 
-              <div style={{ background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: "8px" }}>
+              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: "1.25rem" }}>4️⃣</span>
-                <div style={{ fontWeight: 600, color: "#ffffff", marginTop: "0.5rem" }}>Enriches CRM</div>
-                <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                <div style={{ fontWeight: 600, color: "var(--sorget-dark, #3A313C)", marginTop: "0.5rem" }}>Enriches CRM</div>
+                <div style={{ fontSize: "0.8125rem", color: "var(--sorget-grey, #64748b)", marginTop: "0.25rem", lineHeight: 1.4 }}>
                   HubSpot contacts or custom webhooks receive clean attribution properties.
                 </div>
               </div>
@@ -126,15 +127,16 @@ export default async function SupportPage() {
             style={{
               maxWidth: "100%",
               padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
-            <h2 style={{ fontSize: "1.25rem", margin: "0 0 1rem 0", color: "#ffffff" }}>
+            <h2 style={{ fontSize: "1.25rem", margin: "0 0 1rem 0", color: "var(--sorget-dark, #3A313C)" }}>
               Hidden Form Fields Reference
             </h2>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", lineHeight: 1.6, marginBottom: "1.25rem" }}>
+            <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.875rem", lineHeight: 1.6, marginBottom: "1.25rem" }}>
               Add these 6 hidden fields to your forms. You can use standard <code>&lt;input type=&quot;hidden&quot; name=&quot;...&quot;&gt;</code> tags or your form builder&apos;s hidden field generator.
             </p>
 
@@ -151,11 +153,11 @@ export default async function SupportPage() {
                   {HIDDEN_FIELDS.map((field) => (
                     <tr key={field.name}>
                       <td>
-                        <code style={{ background: "rgba(108, 99, 255, 0.15)", color: "#9d96ff", padding: "0.2rem 0.5rem", borderRadius: "4px", fontSize: "0.85rem", fontWeight: 600 }}>
+                        <code style={{ background: "rgba(187, 12, 104, 0.08)", color: "var(--sorget-pink, #BB0C68)", padding: "0.2rem 0.5rem", borderRadius: "4px", fontSize: "0.85rem", fontWeight: 600 }}>
                           {field.name}
                         </code>
                       </td>
-                      <td style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                      <td style={{ fontSize: "0.85rem", color: "var(--sorget-grey, #64748b)" }}>
                         {field.desc}
                       </td>
                       <td style={{ textAlign: "right" }}>
@@ -174,21 +176,24 @@ export default async function SupportPage() {
             style={{
               maxWidth: "100%",
               padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
-            <h2 style={{ fontSize: "1.25rem", margin: "0 0 1rem 0", color: "#ffffff" }}>
+            <h2 style={{ fontSize: "1.25rem", margin: "0 0 1rem 0", color: "var(--sorget-dark, #3A313C)" }}>
               How to Test Your Installation
             </h2>
-            <ol style={{ color: "var(--text-secondary)", fontSize: "0.875rem", lineHeight: 1.8, paddingLeft: "1.25rem", margin: 0 }}>
+            <ol style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.875rem", lineHeight: 1.8, paddingLeft: "1.25rem", margin: 0 }}>
               <li>Open an <strong>Incognito / Private</strong> browser window.</li>
               <li>Visit your website with test UTM parameters appended:
                 <br />
-                <code style={{ color: "#3ecfcf", fontSize: "0.8rem", background: "rgba(0,0,0,0.3)", padding: "0.2rem 0.4rem", borderRadius: "4px" }}>
-                  https://yourwebsite.com/?utm_source=google&amp;utm_medium=cpc&amp;utm_campaign=test_campaign&amp;gclid=test_gclid_123
-                </code>
+                <div style={{ background: "#1e293b", padding: "0.75rem 1rem", borderRadius: "6px", margin: "0.5rem 0", overflowX: "auto" }}>
+                  <code style={{ color: "#38bdf8", fontSize: "0.8rem" }}>
+                    https://yourwebsite.com/?utm_source=google&amp;utm_medium=cpc&amp;utm_campaign=test_campaign&amp;gclid=test_gclid_123
+                  </code>
+                </div>
               </li>
               <li>Navigate to your form and inspect the hidden inputs using browser DevTools. You should see the values populated.</li>
               <li>Submit the form with a test email.</li>
@@ -202,15 +207,16 @@ export default async function SupportPage() {
             style={{
               maxWidth: "100%",
               padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
-            <h2 style={{ fontSize: "1.25rem", margin: "0 0 0.5rem 0", color: "#ffffff" }}>
+            <h2 style={{ fontSize: "1.25rem", margin: "0 0 0.5rem 0", color: "var(--sorget-dark, #3A313C)" }}>
               Need Help?
             </h2>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", lineHeight: 1.6, margin: "0 0 1rem 0" }}>
+            <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.875rem", lineHeight: 1.6, margin: "0 0 1rem 0" }}>
               Have questions about your CRM mapping, custom forms, or tracking setup? We&apos;re here to help.
             </p>
             <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>

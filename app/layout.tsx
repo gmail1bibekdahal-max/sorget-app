@@ -5,6 +5,10 @@ export const metadata: Metadata = {
   title: "Sorget — Marketing Attribution Platform",
   description:
     "Track where your leads come from. Sorget captures UTM parameters, Google Ads click IDs, and first-touch attribution data for every form submission.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

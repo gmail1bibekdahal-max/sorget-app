@@ -125,10 +125,10 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
 
         {/* Page Header */}
         <div style={{ marginBottom: "2rem" }}>
-          <h1 style={{ fontSize: "1.875rem", fontWeight: 700, margin: "0 0 0.5rem 0" }}>
+          <h1 style={{ fontSize: "1.875rem", fontWeight: 700, margin: "0 0 0.5rem 0", color: "var(--sorget-dark, #3A313C)" }}>
             Integrations
           </h1>
-          <p style={{ color: "var(--text-secondary, #94a3b8)", margin: 0, fontSize: "0.95rem" }}>
+          <p style={{ color: "var(--sorget-grey, #64748b)", margin: 0, fontSize: "0.95rem" }}>
             Sorget captures attribution on your site and passes it directly to your CRM and marketing tools.
           </p>
         </div>
@@ -140,14 +140,15 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
               display: "flex",
               alignItems: "center",
               gap: "0.75rem",
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "8px",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "10px",
               padding: "0.75rem 1rem",
               marginBottom: "2rem",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
             }}
           >
-            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            <span style={{ fontSize: "0.85rem", color: "var(--sorget-grey, #64748b)", fontWeight: 500 }}>
               Viewing integrations for:
             </span>
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -160,19 +161,19 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
                     borderRadius: "6px",
                     fontSize: "0.8125rem",
                     textDecoration: "none",
-                    fontWeight: p.id === activeProject?.id ? 600 : 400,
+                    fontWeight: p.id === activeProject?.id ? 600 : 500,
                     background:
                       p.id === activeProject?.id
-                        ? "rgba(108, 99, 255, 0.25)"
-                        : "rgba(255, 255, 255, 0.05)",
+                        ? "var(--sorget-pink, #BB0C68)"
+                        : "#f1f5f9",
                     color:
                       p.id === activeProject?.id
                         ? "#ffffff"
-                        : "var(--text-secondary)",
+                        : "var(--sorget-dark, #3A313C)",
                     border:
                       p.id === activeProject?.id
-                        ? "1px solid rgba(108, 99, 255, 0.5)"
-                        : "1px solid transparent",
+                        ? "1px solid var(--sorget-pink, #BB0C68)"
+                        : "1px solid #e2e8f0",
                   }}
                 >
                   {p.name}
@@ -190,22 +191,23 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
             style={{
               maxWidth: "100%",
               padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: `1px solid ${isHubSpotConnected ? "rgba(62, 207, 142, 0.3)" : "var(--color-border, rgba(255,255,255,0.08))"}`,
+              background: "#ffffff",
+              border: `1px solid ${isHubSpotConnected ? "#a7f3d0" : "#e2e8f0"}`,
               borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                 <span style={{ fontSize: "2rem" }}>🟠</span>
                 <div>
-                  <h2 style={{ fontSize: "1.25rem", margin: 0, color: "#ffffff" }}>
+                  <h2 style={{ fontSize: "1.25rem", margin: 0, color: "var(--sorget-dark, #3A313C)" }}>
                     HubSpot CRM
                   </h2>
                   <span
                     style={{
                       fontSize: "0.8rem",
-                      color: isHubSpotConnected ? "#3ecf8e" : "#94a3b8",
+                      color: isHubSpotConnected ? "#059669" : "#64748b",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.35rem",
@@ -217,7 +219,7 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
                         width: "7px",
                         height: "7px",
                         borderRadius: "50%",
-                        background: isHubSpotConnected ? "#3ecf8e" : "#64748b",
+                        background: isHubSpotConnected ? "#10b981" : "#94a3b8",
                         display: "inline-block",
                       }}
                     />
@@ -235,8 +237,9 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
                     fontWeight: 600,
                     padding: "0.3rem 0.75rem",
                     borderRadius: "999px",
-                    background: "rgba(62, 207, 142, 0.15)",
-                    color: "#3ecf8e",
+                    background: "#ecfdf5",
+                    color: "#059669",
+                    border: "1px solid #a7f3d0",
                   }}
                 >
                   ✓ Active Sync
@@ -248,8 +251,9 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
                     fontWeight: 600,
                     padding: "0.3rem 0.75rem",
                     borderRadius: "999px",
-                    background: "rgba(255, 255, 255, 0.05)",
-                    color: "var(--text-muted)",
+                    background: "#f1f5f9",
+                    color: "var(--sorget-grey, #64748b)",
+                    border: "1px solid #e2e8f0",
                   }}
                 >
                   Ready to Connect
@@ -257,28 +261,28 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
               )}
             </div>
 
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+            <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.875rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
               Automatically syncs form submission attribution into HubSpot Contact properties (<code>channel</code>, <code>channeldrilldown1</code>, <code>channeldrilldown2</code>, <code>channeldrilldown3</code>, <code>landingpage</code>, <code>landingpagegroup</code>).
             </p>
 
             {isPatToken && (
-              <div style={{ fontSize: "0.825rem", color: "#f59e0b", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: "8px", padding: "0.85rem 1rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+              <div style={{ fontSize: "0.825rem", color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "8px", padding: "0.85rem 1rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
                 ⚠ <strong>Configuration Warning:</strong> <code>HUBSPOT_CLIENT_ID</code> in <code>.env</code> starts with <code>pat-</code>, which is a single-portal <em>Private App Token</em>. HubSpot OAuth requires a <em>Public App Client ID</em> created via the HubSpot CLI (<code>hs project create</code>).
               </div>
             )}
 
             {isHubSpotConnected && !hubspotConnection?.scopes?.includes("crm.schemas.contacts.write") && (
-              <div style={{ fontSize: "0.85rem", color: "#38bdf8", background: "rgba(56,189,248,0.1)", border: "1px solid rgba(56,189,248,0.3)", borderRadius: "8px", padding: "0.85rem 1rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+              <div style={{ fontSize: "0.85rem", color: "#0369a1", background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: "8px", padding: "0.85rem 1rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
                 ℹ <strong>Reconnection Recommended:</strong> Sorget now supports automatic HubSpot attribution property provisioning. Please click <strong>↻ Reconnect HubSpot</strong> below to grant the <code>crm.schemas.contacts.write</code> scope.
               </div>
             )}
 
             {!activeProject?.workspace_id ? (
-              <div style={{ fontSize: "0.8rem", color: "#f59e0b", background: "rgba(245,158,11,0.1)", borderRadius: "6px", padding: "0.75rem 1rem" }}>
+              <div style={{ fontSize: "0.8rem", color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "6px", padding: "0.75rem 1rem" }}>
                 ⚠ This website is not assigned to a workspace. A workspace is required to connect HubSpot.
               </div>
             ) : !hubspotOAuthUrl ? (
-              <div style={{ fontSize: "0.8rem", color: "#f59e0b", background: "rgba(245,158,11,0.1)", borderRadius: "6px", padding: "0.75rem 1rem" }}>
+              <div style={{ fontSize: "0.8rem", color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "6px", padding: "0.75rem 1rem" }}>
                 ⚠ <code>HUBSPOT_CLIENT_ID</code> is not configured. Set it in your <code>.env</code> file to enable one-click OAuth connection.
               </div>
             ) : isHubSpotConnected ? (
@@ -289,9 +293,9 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
                     display: "inline-block",
                     padding: "0.5rem 1rem",
                     borderRadius: "6px",
-                    background: "rgba(62, 207, 142, 0.12)",
-                    border: "1px solid rgba(62, 207, 142, 0.3)",
-                    color: "#3ecf8e",
+                    background: "#ecfdf5",
+                    border: "1px solid #a7f3d0",
+                    color: "#059669",
                     fontSize: "0.875rem",
                     textDecoration: "none",
                     fontWeight: 500,
@@ -306,9 +310,9 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
                     style={{
                       padding: "0.5rem 1rem",
                       borderRadius: "6px",
-                      background: "rgba(239, 68, 68, 0.1)",
-                      border: "1px solid rgba(239, 68, 68, 0.25)",
-                      color: "#f87171",
+                      background: "#fef2f2",
+                      border: "1px solid #fecaca",
+                      color: "#dc2626",
                       fontSize: "0.875rem",
                       cursor: "pointer",
                       fontWeight: 500,
@@ -337,19 +341,20 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
             style={{
               maxWidth: "100%",
               padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
                 <span style={{ fontSize: "1.5rem" }}>⚡</span>
-                <h2 style={{ fontSize: "1.25rem", margin: 0, color: "#ffffff" }}>
+                <h2 style={{ fontSize: "1.25rem", margin: 0, color: "var(--sorget-dark, #3A313C)" }}>
                   Outbound Webhooks
                 </h2>
               </div>
-              <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", margin: "0.25rem 0 0 0", lineHeight: 1.5 }}>
+              <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.875rem", margin: "0.25rem 0 0 0", lineHeight: 1.5 }}>
                 Receive real-time HTTP POST notifications on every lead captured, signed with HMAC-SHA256. Perfect for Zapier, Make, or internal backends.
               </p>
             </div>
@@ -358,15 +363,15 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
             {(!webhooks || webhooks.length === 0) ? (
               <div
                 style={{
-                  background: "rgba(255, 255, 255, 0.02)",
-                  border: "1px dashed rgba(255, 255, 255, 0.1)",
+                  background: "#f8fafc",
+                  border: "1px dashed #cbd5e1",
                   borderRadius: "8px",
                   padding: "1.5rem",
                   textAlign: "center",
                   marginBottom: "1.5rem",
                 }}
               >
-                <p style={{ color: "var(--text-muted)", margin: 0, fontSize: "0.875rem" }}>
+                <p style={{ color: "var(--sorget-grey, #64748b)", margin: 0, fontSize: "0.875rem" }}>
                   No webhooks configured for {activeProject?.name || "this website"}. Add an endpoint below to start receiving real-time payloads.
                 </p>
               </div>
@@ -379,18 +384,18 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      background: "rgba(255, 255, 255, 0.03)",
-                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
                       padding: "0.85rem 1rem",
                       borderRadius: "8px",
                     }}
                   >
                     <div>
-                      <div style={{ fontFamily: "monospace", fontSize: "0.875rem", color: "#3ecfcf" }}>
+                      <div style={{ fontFamily: "monospace", fontSize: "0.875rem", color: "var(--sorget-pink, #BB0C68)", fontWeight: 600 }}>
                         {wh.url}
                       </div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                        Secret: <code>{wh.secret.substring(0, 10)}••••••••</code> · Status: <span style={{ color: "#3ecf8e" }}>{wh.status}</span>
+                      <div style={{ fontSize: "0.75rem", color: "var(--sorget-grey, #64748b)", marginTop: "0.25rem" }}>
+                        Secret: <code>{wh.secret.substring(0, 10)}••••••••</code> · Status: <span style={{ color: "#059669", fontWeight: 600 }}>{wh.status}</span>
                       </div>
                     </div>
                     <form action={deleteWebhook}>
@@ -402,10 +407,11 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
                         style={{
                           background: "none",
                           border: "none",
-                          color: "#f87171",
+                          color: "#dc2626",
                           fontSize: "0.8125rem",
                           cursor: "pointer",
                           padding: "0.25rem 0.5rem",
+                          fontWeight: 500,
                         }}
                       >
                         Remove
@@ -420,13 +426,13 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
             {activeProject ? (
               <div
                 style={{
-                  background: "rgba(255, 255, 255, 0.02)",
-                  border: "1px solid rgba(255, 255, 255, 0.06)",
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
                   borderRadius: "8px",
                   padding: "1.25rem",
                 }}
               >
-                <h3 style={{ fontSize: "0.95rem", margin: "0 0 0.75rem 0", color: "#ffffff" }}>
+                <h3 style={{ fontSize: "0.95rem", margin: "0 0 0.75rem 0", color: "var(--sorget-dark, #3A313C)", fontWeight: 600 }}>
                   + Add New Webhook Endpoint
                 </h3>
                 <form
@@ -448,11 +454,11 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
                     style={{
                       flex: 1,
                       minWidth: "260px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1",
                       borderRadius: "6px",
                       padding: "0.5rem 0.75rem",
-                      color: "#ffffff",
+                      color: "var(--sorget-dark, #3A313C)",
                       fontSize: "0.875rem",
                     }}
                   />

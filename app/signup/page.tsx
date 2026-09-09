@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { signup } from "@/app/actions/auth";
 
 interface PageProps {
@@ -6,8 +7,8 @@ interface PageProps {
 }
 
 export const metadata = {
-  title: "Create Account — Attributer",
-  description: "Create your Attributer account to start tracking lead attribution.",
+  title: "Create Account — Sorget",
+  description: "Create your Sorget account to start tracking lead attribution.",
 };
 
 export default async function SignupPage({ searchParams }: PageProps) {
@@ -18,45 +19,69 @@ export default async function SignupPage({ searchParams }: PageProps) {
   return (
     <div className="page">
       <div className="card">
-        {/* Logo */}
-        <div className="logo">
-          <div className="logo-icon">⚡</div>
-          <span>Attributer</span>
-        </div>
+        {/* Brand Logo */}
+        <Link href="/" className="logo">
+          <Image
+            src="/logo.png"
+            alt="Sorget Logo"
+            width={34}
+            height={34}
+            className="logo-img"
+            priority
+          />
+          <span>Sorget</span>
+        </Link>
 
         <h1>Create your account</h1>
-        <p style={{ marginBottom: "2rem" }}>
-          Start tracking where your leads come from.
+        <p style={{ marginBottom: "2rem", color: "var(--text-muted)" }}>
+          Start tracking where your leads and revenue actually come from.
         </p>
 
         {error && (
           <div className="alert alert-error" role="alert">
-            {error}
+            <span>⚠️</span>
+            <span>{error}</span>
           </div>
         )}
 
         {success && (
           <div className="alert alert-success" role="alert">
-            Account created! Check your email to confirm your address, then{" "}
-            <Link href="/login">sign in</Link>.
+            <span>✓</span>
+            <span>
+              Account created! Check your email to confirm your address, then{" "}
+              <Link href="/login" style={{ color: "inherit", fontWeight: 700, textDecoration: "underline" }}>
+                sign in
+              </Link>.
+            </span>
           </div>
         )}
 
         {!success && (
           <form action={signup} id="signup-form">
             <div className="form-group">
-              <label htmlFor="signup-email">Email address</label>
+              <label htmlFor="signup-name">Full Name (optional)</label>
+              <input
+                id="signup-name"
+                name="name"
+                type="text"
+                placeholder="Jane Doe"
+                autoComplete="name"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="signup-email">Work Email</label>
               <input
                 id="signup-email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="you@company.com"
                 required
                 autoComplete="email"
               />
             </div>
 
-            <div className="form-group" style={{ marginBottom: "1.5rem" }}>
+            <div className="form-group" style={{ marginBottom: "1.75rem" }}>
               <label htmlFor="signup-password">Password</label>
               <input
                 id="signup-password"
@@ -78,7 +103,7 @@ export default async function SignupPage({ searchParams }: PageProps) {
         <div className="auth-footer">
           Already have an account?{" "}
           <Link href="/login" id="login-link">
-            Log in
+            Sign In
           </Link>
         </div>
       </div>

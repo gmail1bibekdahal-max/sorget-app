@@ -1,4 +1,5 @@
-﻿import Link from "next/link";
+import Link from "next/link";
+import Image from "next/image";
 import { requestPasswordReset } from "@/app/actions/auth";
 
 interface PageProps {
@@ -6,8 +7,8 @@ interface PageProps {
 }
 
 export const metadata = {
-  title: "Forgot Password — Attributer",
-  description: "Reset your Attributer account password.",
+  title: "Forgot Password — Sorget",
+  description: "Reset your Sorget account password.",
 };
 
 export default async function ForgotPasswordPage({ searchParams }: PageProps) {
@@ -18,31 +19,41 @@ export default async function ForgotPasswordPage({ searchParams }: PageProps) {
   return (
     <div className="page">
       <div className="card">
-        <div className="logo">
-          <div className="logo-icon">⚡</div>
-          <span>Attributer</span>
-        </div>
+        {/* Brand Logo */}
+        <Link href="/" className="logo">
+          <Image
+            src="/logo.png"
+            alt="Sorget Logo"
+            width={34}
+            height={34}
+            className="logo-img"
+            priority
+          />
+          <span>Sorget</span>
+        </Link>
 
-        <h1>Reset Password</h1>
-        <p style={{ marginBottom: "2rem" }}>
-          Enter your email address and we will send you a link to reset your password.
+        <h1>Reset password</h1>
+        <p style={{ marginBottom: "2rem", color: "var(--text-muted)" }}>
+          Enter your email address and we will send you a secure link to reset your password.
         </p>
 
         {error && (
           <div className="alert alert-error" role="alert">
-            {error}
+            <span>⚠️</span>
+            <span>{error}</span>
           </div>
         )}
 
         {success && (
           <div className="alert alert-success" role="status">
-            Password reset link sent! Please check your inbox.
+            <span>✓</span>
+            <span>Password reset link sent! Please check your email inbox.</span>
           </div>
         )}
 
         {!success && (
           <form action={requestPasswordReset} id="forgot-form">
-            <div className="form-group" style={{ marginBottom: "1.5rem" }}>
+            <div className="form-group" style={{ marginBottom: "1.75rem" }}>
               <label htmlFor="forgot-email">Email address</label>
               <input
                 id="forgot-email"
@@ -60,7 +71,7 @@ export default async function ForgotPasswordPage({ searchParams }: PageProps) {
           </form>
         )}
 
-        <div className="auth-footer" style={{ marginTop: "2rem" }}>
+        <div className="auth-footer">
           Remember your password?{" "}
           <Link href="/login" id="back-login-link">
             Sign In

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { updatePassword } from "@/app/actions/auth";
@@ -8,8 +9,8 @@ interface PageProps {
 }
 
 export const metadata = {
-  title: "Set New Password — Attributer",
-  description: "Set a new password for your Attributer account.",
+  title: "Set New Password — Sorget",
+  description: "Set a new password for your Sorget account.",
 };
 
 export default async function ResetPasswordPage({ searchParams }: PageProps) {
@@ -31,19 +32,28 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
   return (
     <div className="page">
       <div className="card">
-        <div className="logo">
-          <div className="logo-icon">⚡</div>
-          <span>Attributer</span>
-        </div>
+        {/* Brand Logo */}
+        <Link href="/" className="logo">
+          <Image
+            src="/logo.png"
+            alt="Sorget Logo"
+            width={34}
+            height={34}
+            className="logo-img"
+            priority
+          />
+          <span>Sorget</span>
+        </Link>
 
-        <h1>Set New Password</h1>
-        <p style={{ marginBottom: "2rem" }}>
+        <h1>Set new password</h1>
+        <p style={{ marginBottom: "2rem", color: "var(--text-muted)" }}>
           Enter and confirm your new account password below.
         </p>
 
         {error && (
           <div className="alert alert-error" role="alert">
-            {error}
+            <span>⚠️</span>
+            <span>{error}</span>
           </div>
         )}
 
@@ -56,11 +66,12 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
               type="password"
               placeholder="At least 6 characters"
               required
+              minLength={6}
               autoComplete="new-password"
             />
           </div>
 
-          <div className="form-group" style={{ marginBottom: "1.5rem" }}>
+          <div className="form-group" style={{ marginBottom: "1.75rem" }}>
             <label htmlFor="reset-confirm-password">Confirm New Password</label>
             <input
               id="reset-confirm-password"
@@ -68,6 +79,7 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
               type="password"
               placeholder="Confirm your password"
               required
+              minLength={6}
               autoComplete="new-password"
             />
           </div>
@@ -77,7 +89,7 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
           </button>
         </form>
 
-        <div className="auth-footer" style={{ marginTop: "2rem" }}>
+        <div className="auth-footer">
           <Link href="/login">Back to Sign In</Link>
         </div>
       </div>

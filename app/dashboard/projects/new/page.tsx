@@ -45,36 +45,36 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
 
       <main className="dashboard-main" style={{ maxWidth: "600px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
         <div style={{ marginBottom: "1.5rem" }}>
-          <Link href="/dashboard" style={{ color: "var(--accent, #6366f1)", fontSize: "0.875rem", textDecoration: "none" }}>
+          <Link href="/dashboard" style={{ color: "var(--sorget-pink, #BB0C68)", fontSize: "0.875rem", textDecoration: "none", fontWeight: 500 }}>
             ← Back to Websites
           </Link>
         </div>
 
         <div style={{ marginBottom: "2rem" }}>
-          <h1 style={{ fontSize: "1.75rem", fontWeight: 700, margin: "0 0 0.25rem 0", color: "#ffffff" }}>
+          <h1 style={{ fontSize: "1.75rem", fontWeight: 700, margin: "0 0 0.25rem 0", color: "var(--sorget-dark, #3A313C)" }}>
             Add New Website
           </h1>
-          <p style={{ color: "var(--text-secondary, #94a3b8)", margin: 0, fontSize: "0.95rem" }}>
+          <p style={{ color: "var(--sorget-grey, #64748b)", margin: 0, fontSize: "0.95rem" }}>
             Generate a unique tracking ID and code snippet for your website.
           </p>
         </div>
 
         {errorMsg && <div className="alert alert-error" style={{ marginBottom: "1.5rem" }}>{errorMsg}</div>}
 
-        <div className="card" style={{ maxWidth: "100%", padding: "2rem", background: "var(--color-card, #1a1a26)", border: "1px solid var(--color-border)", borderRadius: "14px" }}>
+        <div className="card" style={{ maxWidth: "100%", padding: "2rem", background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "14px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
           <form action={createProject} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label htmlFor="new-proj-name" style={{ fontSize: "0.875rem", fontWeight: 500 }}>
+              <label htmlFor="new-proj-name" style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--sorget-dark, #3A313C)" }}>
                 Website Name *
               </label>
               <input id="new-proj-name" name="name" type="text" placeholder="e.g. Acme SaaS" required autoFocus />
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label htmlFor="new-proj-website" style={{ fontSize: "0.875rem", fontWeight: 500 }}>
+              <label htmlFor="new-proj-website" style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--sorget-dark, #3A313C)" }}>
                 Website URL (optional)
               </label>
               <input id="new-proj-website" name="website" type="text" placeholder="e.g. https://example.com" />
-              <span className="text-muted" style={{ fontSize: "0.8rem", marginTop: "0.3rem", display: "block" }}>
+              <span className="text-muted" style={{ fontSize: "0.8rem", marginTop: "0.3rem", display: "block", color: "var(--sorget-grey, #64748b)" }}>
                 Primary marketing domain where the tracking code will be installed.
               </span>
             </div>

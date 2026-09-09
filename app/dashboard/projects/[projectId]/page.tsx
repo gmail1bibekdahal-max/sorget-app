@@ -178,19 +178,20 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             justifyContent: "space-between",
             alignItems: "flex-start",
             marginBottom: "2rem",
-            background: "var(--color-card, #1a1a26)",
-            border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+            background: "#ffffff",
+            border: "1px solid #e2e8f0",
             borderRadius: "14px",
             padding: "1.75rem",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
           }}
         >
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-              <Link href="/dashboard" style={{ color: "var(--text-muted)", fontSize: "0.8125rem", textDecoration: "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+              <Link href="/dashboard" style={{ color: "var(--sorget-pink, #BB0C68)", fontSize: "0.8125rem", textDecoration: "none", fontWeight: 500 }}>
                 ← Back to Websites
               </Link>
             </div>
-            <h1 style={{ fontSize: "1.75rem", fontWeight: 700, margin: "0.25rem 0", color: "#ffffff" }}>
+            <h1 style={{ fontSize: "1.75rem", fontWeight: 700, margin: "0.25rem 0", color: "var(--sorget-dark, #3A313C)" }}>
               {p.name}
             </h1>
             {p.website ? (
@@ -198,17 +199,17 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
                 href={p.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "#3ecfcf", textDecoration: "none", fontSize: "0.875rem" }}
+                style={{ color: "var(--sorget-pink, #BB0C68)", textDecoration: "none", fontSize: "0.875rem", fontWeight: 500 }}
               >
                 {p.website} ↗
               </a>
             ) : (
-              <span style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>No website URL configured</span>
+              <span style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.875rem" }}>No website URL configured</span>
             )}
           </div>
 
           <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.5rem" }}>
-            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600 }}>
+            <span style={{ fontSize: "0.75rem", color: "var(--sorget-grey, #64748b)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.05em" }}>
               Tracking ID
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -216,8 +217,9 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
                 id="project-tracking-id-display"
                 style={{
                   fontSize: "0.875rem",
-                  background: "rgba(62, 207, 207, 0.1)",
-                  color: "#3ecfcf",
+                  background: "rgba(187, 12, 104, 0.08)",
+                  color: "var(--sorget-pink, #BB0C68)",
+                  border: "1px solid rgba(187, 12, 104, 0.2)",
                   padding: "0.35rem 0.75rem",
                   borderRadius: "6px",
                   fontWeight: 600,
@@ -238,13 +240,14 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             style={{
               maxWidth: "100%",
               padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-              <h2 style={{ fontSize: "1.2rem", margin: 0, color: "#ffffff" }}>
+              <h2 style={{ fontSize: "1.2rem", margin: 0, color: "var(--sorget-dark, #3A313C)" }}>
                 1. Tracking Code
               </h2>
               <span
@@ -253,14 +256,15 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
                   fontWeight: 600,
                   padding: "0.25rem 0.65rem",
                   borderRadius: "999px",
-                  background: leads.length > 0 ? "rgba(62, 207, 142, 0.15)" : "rgba(245, 158, 11, 0.15)",
-                  color: leads.length > 0 ? "#3ecf8e" : "#f59e0b",
+                  background: leads.length > 0 ? "#ecfdf5" : "#fffbeb",
+                  color: leads.length > 0 ? "#059669" : "#92400e",
+                  border: `1px solid ${leads.length > 0 ? "#a7f3d0" : "#fde68a"}`,
                 }}
               >
                 {leads.length > 0 ? "✓ Active (Submissions Captured)" : "Pending First Submission"}
               </span>
             </div>
-            <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: "1rem", lineHeight: 1.5 }}>
+            <p style={{ fontSize: "0.875rem", color: "var(--sorget-grey, #64748b)", marginBottom: "1rem", lineHeight: 1.5 }}>
               Paste this snippet into your website HTML template right before the closing <code>&lt;/head&gt;</code> tag on every page.
             </p>
             <div className="code-block" style={{ margin: 0 }}>
@@ -278,15 +282,16 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             style={{
               maxWidth: "100%",
               padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
-            <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.5rem 0", color: "#ffffff" }}>
+            <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.5rem 0", color: "var(--sorget-dark, #3A313C)" }}>
               2. Form Hidden Fields Reference
             </h2>
-            <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+            <p style={{ fontSize: "0.875rem", color: "var(--sorget-grey, #64748b)", marginBottom: "1.25rem", lineHeight: 1.5 }}>
               Add these 6 hidden fields to any web form (Gravity Forms, HubSpot Forms, Webflow, Typeform, or standard HTML). When a visitor arrives, Sorget automatically writes their attribution into these fields.
             </p>
             <div className="table-container" style={{ margin: 0 }}>
@@ -303,12 +308,12 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
                   {HIDDEN_FIELDS.map((field) => (
                     <tr key={field.name}>
                       <td>
-                        <code style={{ background: "rgba(108, 99, 255, 0.15)", color: "#9d96ff", padding: "0.2rem 0.5rem", borderRadius: "4px", fontSize: "0.85rem", fontWeight: 600 }}>
+                        <code style={{ background: "rgba(187, 12, 104, 0.08)", color: "var(--sorget-pink, #BB0C68)", padding: "0.2rem 0.5rem", borderRadius: "4px", fontSize: "0.85rem", fontWeight: 600 }}>
                           {field.name}
                         </code>
                       </td>
-                      <td style={{ fontWeight: 500, color: "#ffffff" }}>{field.label}</td>
-                      <td style={{ color: "var(--text-secondary)", fontSize: "0.8125rem" }}>{field.example}</td>
+                      <td style={{ fontWeight: 500, color: "var(--sorget-dark, #3A313C)" }}>{field.label}</td>
+                      <td style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.8125rem" }}>{field.example}</td>
                       <td style={{ textAlign: "right" }}>
                         <CopyButton text={field.name} label="Copy" />
                       </td>
@@ -325,17 +330,18 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             style={{
               maxWidth: "100%",
               padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
               <div>
-                <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.25rem 0", color: "#ffffff" }}>
+                <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.25rem 0", color: "var(--sorget-dark, #3A313C)" }}>
                   3. Integration Status
                 </h2>
-                <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", margin: 0 }}>
+                <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.875rem", margin: 0 }}>
                   Connected destinations receiving attribution data from this website.
                 </p>
               </div>
@@ -350,33 +356,33 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
               {/* HubSpot Status */}
-              <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "1.25rem", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+              <div style={{ background: "#f8fafc", padding: "1.25rem", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <span>🟠</span>
-                    <strong style={{ color: "#ffffff" }}>HubSpot CRM</strong>
+                    <strong style={{ color: "var(--sorget-dark, #3A313C)" }}>HubSpot CRM</strong>
                   </div>
-                  <span style={{ fontSize: "0.75rem", fontWeight: 600, color: isHubSpotConnected ? "#3ecf8e" : "var(--text-muted)" }}>
+                  <span style={{ fontSize: "0.75rem", fontWeight: 600, color: isHubSpotConnected ? "#059669" : "var(--sorget-grey, #64748b)" }}>
                     {isHubSpotConnected ? "✓ Connected" : "Not Connected"}
                   </span>
                 </div>
-                <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", margin: 0 }}>
+                <p style={{ fontSize: "0.8125rem", color: "var(--sorget-grey, #64748b)", margin: 0 }}>
                   {isHubSpotConnected ? "Syncing contacts with channel and campaign properties." : "Connect to auto-enrich HubSpot contacts."}
                 </p>
               </div>
 
               {/* Webhooks Status */}
-              <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "1.25rem", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+              <div style={{ background: "#f8fafc", padding: "1.25rem", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <span>⚡</span>
-                    <strong style={{ color: "#ffffff" }}>Outbound Webhooks</strong>
+                    <strong style={{ color: "var(--sorget-dark, #3A313C)" }}>Outbound Webhooks</strong>
                   </div>
-                  <span style={{ fontSize: "0.75rem", fontWeight: 600, color: (webhookCount ?? 0) > 0 ? "#3ecf8e" : "var(--text-muted)" }}>
+                  <span style={{ fontSize: "0.75rem", fontWeight: 600, color: (webhookCount ?? 0) > 0 ? "#059669" : "var(--sorget-grey, #64748b)" }}>
                     {(webhookCount ?? 0) > 0 ? `✓ ${webhookCount} Active` : "None"}
                   </span>
                 </div>
-                <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", margin: 0 }}>
+                <p style={{ fontSize: "0.8125rem", color: "var(--sorget-grey, #64748b)", margin: 0 }}>
                   {(webhookCount ?? 0) > 0 ? "Dispatching signed HTTP POST payloads on submission." : "Receive real-time lead payloads in Zapier / Make."}
                 </p>
               </div>
@@ -389,17 +395,18 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             style={{
               maxWidth: "100%",
               padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.25rem 0", color: "#ffffff" }}>
+                <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.25rem 0", color: "var(--sorget-dark, #3A313C)" }}>
                   4. Test Installation
                 </h2>
-                <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", margin: 0 }}>
+                <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.875rem", margin: 0 }}>
                   Verify that your tracking snippet is installed and hidden fields are detected on your live pages.
                 </p>
               </div>
@@ -420,17 +427,18 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             style={{
               maxWidth: "100%",
               padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
               <div>
-                <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.25rem 0", color: "#ffffff" }}>
+                <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.25rem 0", color: "var(--sorget-dark, #3A313C)" }}>
                   5. Recent Submissions (Verification Log)
                 </h2>
-                <p style={{ color: "var(--text-muted)", fontSize: "0.8125rem", margin: 0 }}>
+                <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.8125rem", margin: 0 }}>
                   Inspection log of recent submissions captured on {p.name}. Use this strictly for verification.
                 </p>
               </div>
@@ -455,11 +463,11 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             </div>
 
             {leads.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "2rem 1rem", background: "rgba(255, 255, 255, 0.02)", borderRadius: "8px" }}>
-                <p style={{ color: "var(--text-secondary)", margin: 0, fontSize: "0.875rem" }}>
+              <div style={{ textAlign: "center", padding: "2rem 1rem", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                <p style={{ color: "var(--sorget-dark, #3A313C)", margin: 0, fontSize: "0.875rem", fontWeight: 500 }}>
                   No submissions recorded yet for this website.
                 </p>
-                <p style={{ color: "var(--text-muted)", margin: "0.25rem 0 0 0", fontSize: "0.8125rem" }}>
+                <p style={{ color: "var(--sorget-grey, #64748b)", margin: "0.25rem 0 0 0", fontSize: "0.8125rem" }}>
                   Install the script tag above and submit a form on your website to verify attribution capture.
                 </p>
               </div>
@@ -480,25 +488,26 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
                   <tbody>
                     {leads.map((lead) => (
                       <tr key={lead.id}>
-                        <td style={{ fontWeight: 500 }}>{lead.name ?? "—"}</td>
-                        <td style={{ color: "var(--text-secondary)" }}>{lead.email ?? "—"}</td>
+                        <td style={{ fontWeight: 500, color: "var(--sorget-dark, #3A313C)" }}>{lead.name ?? "—"}</td>
+                        <td style={{ color: "var(--sorget-grey, #64748b)" }}>{lead.email ?? "—"}</td>
                         <td>
                           <span className={channelBadgeClass(lead.channel)}>
                             {lead.channel ?? "—"}
                           </span>
                         </td>
-                        <td>{lead.source ?? "—"}</td>
-                        <td>{lead.medium ?? "—"}</td>
+                        <td style={{ color: "var(--sorget-dark, #3A313C)" }}>{lead.source ?? "—"}</td>
+                        <td style={{ color: "var(--sorget-grey, #64748b)" }}>{lead.medium ?? "—"}</td>
                         <td
                           style={{
                             fontFamily: "monospace",
                             fontSize: "0.75rem",
-                            color: "#3ecfcf",
+                            color: "var(--sorget-pink, #BB0C68)",
+                            fontWeight: 500,
                           }}
                         >
                           {lead.gclid ? lead.gclid.slice(0, 16) + "…" : "—"}
                         </td>
-                        <td style={{ whiteSpace: "nowrap", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+                        <td style={{ whiteSpace: "nowrap", fontSize: "0.8125rem", color: "var(--sorget-grey, #64748b)" }}>
                           {formatDate(lead.created_at)}
                         </td>
                       </tr>

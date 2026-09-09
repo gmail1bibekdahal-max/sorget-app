@@ -108,35 +108,37 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
   const leadList: Lead[] = leads ?? [];
 
   return (
-    <div className="dashboard-layout" style={{ minHeight: "100vh" }}>
+    <div className="dashboard-layout">
       <MainNavigation
         userEmail={user.email}
         workspaces={userWorkspaces}
         activeWorkspaceId={selectedWsId}
       />
 
-      <main className="dashboard-main" style={{ maxWidth: "1100px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+      <main className="dashboard-main">
         {/* Banners */}
-        {errorMsg && <div className="alert alert-error">{errorMsg}</div>}
-        {successMsg && <div className="alert alert-success">{successMsg}</div>}
+        {errorMsg && <div className="alert alert-error"><span>⚠️</span><span>{errorMsg}</span></div>}
+        {successMsg && <div className="alert alert-success"><span>✓</span><span>{successMsg}</span></div>}
         {projectsError && (
           <div className="alert alert-error">
-            Failed to load websites: {projectsError.message}
+            <span>⚠️</span>
+            <span>Failed to load websites: {projectsError.message}</span>
           </div>
         )}
         {leadsError && (
           <div className="alert alert-error">
-            Failed to load verification log: {leadsError.message}
+            <span>⚠️</span>
+            <span>Failed to load verification log: {leadsError.message}</span>
           </div>
         )}
 
         {/* Section Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.75rem" }}>
           <div>
-            <h1 style={{ fontSize: "1.875rem", fontWeight: 700, margin: "0 0 0.25rem 0" }}>
+            <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "var(--sorget-dark, #3A313C)", margin: "0 0 0.35rem 0" }}>
               Websites
             </h1>
-            <p style={{ color: "var(--text-secondary, #94a3b8)", margin: 0, fontSize: "0.95rem" }}>
+            <p style={{ color: "var(--text-muted, #64748b)", margin: 0, fontSize: "0.95rem" }}>
               Tracked domains where Sorget captures visitor attribution.
             </p>
           </div>
@@ -144,7 +146,7 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
             href="/dashboard/projects/new"
             className="btn btn-primary btn-sm"
             id="new-project-btn"
-            style={{ textDecoration: "none" }}
+            style={{ textDecoration: "none", padding: "0.55rem 1.15rem", borderRadius: "8px" }}
           >
             + Add Website
           </Link>
@@ -156,26 +158,27 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
           style={{
             maxWidth: "100%",
             marginBottom: "2.5rem",
-            padding: "1.5rem",
-            background: "var(--color-card, #1a1a26)",
-            border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
-            borderRadius: "12px",
+            padding: "1.5rem 1.75rem",
+            background: "#ffffff",
+            border: "1.5px solid var(--color-border, #e2e8f0)",
+            borderRadius: "14px",
+            boxShadow: "var(--shadow-sm)",
           }}
         >
-          <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.75rem", color: "#3ecfcf" }}>
+          <h2 style={{ fontSize: "1.05rem", fontWeight: 700, marginBottom: "0.85rem", color: "var(--sorget-dark, #3A313C)" }}>
             Quick Add Website
           </h2>
           <form
             action={createProject}
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
               gap: "1rem",
               alignItems: "end",
             }}
           >
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label htmlFor="proj-name" style={{ fontSize: "0.8125rem" }}>Website Name *</label>
+              <label htmlFor="proj-name" style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Website Name *</label>
               <input
                 id="proj-name"
                 name="name"
@@ -185,7 +188,7 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
               />
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label htmlFor="proj-website" style={{ fontSize: "0.8125rem" }}>Website URL (optional)</label>
+              <label htmlFor="proj-website" style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Website URL (optional)</label>
               <input
                 id="proj-website"
                 name="website"
@@ -197,7 +200,7 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
               id="create-project-submit"
               type="submit"
               className="btn btn-primary"
-              style={{ height: "42px" }}
+              style={{ height: "42px", borderRadius: "8px" }}
             >
               Add Website
             </button>
@@ -206,16 +209,18 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
 
         {/* Websites List */}
         {projectList.length === 0 ? (
-          <div className="empty-state" style={{ padding: "3rem 1.5rem", textAlign: "center" }}>
+          <div className="empty-state" style={{ padding: "3.5rem 1.5rem", textAlign: "center", marginBottom: "3rem" }}>
             <div className="empty-state-icon" style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🌐</div>
-            <h3 style={{ fontSize: "1.2rem", margin: "0 0 0.5rem 0", color: "#ffffff" }}>No websites tracked yet</h3>
-            <p className="text-muted" style={{ fontSize: "0.875rem", maxWidth: "420px", margin: "0 auto 1.5rem auto" }}>
+            <h3 style={{ fontSize: "1.25rem", margin: "0 0 0.5rem 0", color: "var(--sorget-dark, #3A313C)", fontWeight: 700 }}>
+              No websites tracked yet
+            </h3>
+            <p className="text-muted" style={{ fontSize: "0.9rem", maxWidth: "440px", margin: "0 auto 1.5rem auto" }}>
               Add your first website above, or launch the Getting Started guide for step-by-step installation instructions.
             </p>
             <Link
               href="/dashboard/getting-started"
               className="btn btn-primary btn-sm"
-              style={{ textDecoration: "none" }}
+              style={{ textDecoration: "none", padding: "0.6rem 1.25rem", display: "inline-flex" }}
             >
               🚀 Launch Getting Started Guide →
             </Link>
@@ -232,19 +237,20 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
                   key={project.id}
                   className="project-card"
                   style={{
-                    background: "var(--color-card, #1a1a26)",
-                    border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
-                    borderRadius: "12px",
-                    padding: "1.25rem",
+                    background: "#ffffff",
+                    border: "1.5px solid var(--color-border, #e2e8f0)",
+                    borderRadius: "14px",
+                    padding: "1.35rem 1.5rem",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
+                    boxShadow: "var(--shadow-sm)",
                   }}
                 >
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
                       <div>
-                        <div className="project-name" style={{ fontWeight: 600, fontSize: "1.05rem", color: "#ffffff" }}>
+                        <div className="project-name" style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--sorget-dark, #3A313C)" }}>
                           {project.name}
                         </div>
                         {project.website && (
@@ -257,11 +263,13 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
                         className="project-tracking-id"
                         style={{
                           fontSize: "0.75rem",
-                          fontFamily: "monospace",
-                          background: "rgba(62, 207, 207, 0.1)",
-                          color: "#3ecfcf",
+                          fontFamily: "'SF Mono', Consolas, monospace",
+                          background: "var(--sorget-pink-light, rgba(187, 12, 104, 0.08))",
+                          color: "var(--sorget-pink, #BB0C68)",
+                          border: "1px solid var(--sorget-pink-border, rgba(187, 12, 104, 0.25))",
                           padding: "0.2rem 0.5rem",
-                          borderRadius: "4px",
+                          borderRadius: "6px",
+                          fontWeight: 700,
                         }}
                       >
                         {project.tracking_id}
@@ -271,11 +279,11 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
                     {/* Script Snippet Box */}
                     <div
                       style={{
-                        marginTop: "0.75rem",
-                        background: "#090d16",
-                        border: "1px solid var(--color-border)",
-                        borderRadius: "6px",
-                        padding: "0.6rem 0.75rem",
+                        marginTop: "0.85rem",
+                        background: "#f8fafc",
+                        border: "1px solid var(--color-border, #e2e8f0)",
+                        borderRadius: "8px",
+                        padding: "0.5rem 0.75rem",
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
@@ -284,7 +292,8 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
                       <code
                         style={{
                           fontSize: "0.725rem",
-                          color: "#94a3b8",
+                          fontFamily: "'SF Mono', Consolas, monospace",
+                          color: "#475569",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
@@ -302,21 +311,21 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      marginTop: "1rem",
+                      marginTop: "1.25rem",
                       paddingTop: "0.75rem",
-                      borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+                      borderTop: "1px solid #f1f5f9",
                     }}
                   >
                     <div>
-                      <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                      <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary, #475569)" }}>
                         {project.lead_count} {project.lead_count === 1 ? "submission" : "submissions"}
                       </span>
                     </div>
                     <Link
                       href={`/dashboard/projects/${project.id}`}
-                      className="btn btn-ghost btn-sm"
+                      className="btn btn-secondary btn-sm"
                       id={`view-project-${project.id}`}
-                      style={{ textDecoration: "none", fontSize: "0.8125rem" }}
+                      style={{ textDecoration: "none", fontSize: "0.8125rem", padding: "0.35rem 0.75rem", borderRadius: "6px" }}
                     >
                       Configure &amp; Log →
                     </Link>
@@ -330,25 +339,27 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
         {/* Recent Submissions Verification Log */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
           <div>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, margin: 0, color: "#ffffff" }}>
+            <h2 style={{ fontSize: "1.3rem", fontWeight: 700, margin: 0, color: "var(--sorget-dark, #3A313C)" }}>
               Recent Submissions (Verification Log)
             </h2>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.8125rem", margin: "0.25rem 0 0 0" }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: "0.25rem 0 0 0" }}>
               Inspection log showing the last 50 captured submissions with full attribution parameters.
             </p>
           </div>
         </div>
 
         {leadList.length === 0 ? (
-          <div className="empty-state" style={{ padding: "2.5rem 1rem", textAlign: "center" }}>
+          <div className="empty-state" style={{ padding: "3rem 1rem", textAlign: "center" }}>
             <div className="empty-state-icon" style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🎯</div>
-            <p style={{ color: "var(--text-secondary)", margin: 0, fontSize: "0.9rem" }}>No submissions recorded yet.</p>
-            <p className="text-muted" style={{ marginTop: "0.25rem", fontSize: "0.8125rem" }}>
+            <p style={{ color: "var(--sorget-dark, #3A313C)", margin: 0, fontSize: "0.95rem", fontWeight: 600 }}>
+              No submissions recorded yet.
+            </p>
+            <p className="text-muted" style={{ marginTop: "0.25rem", fontSize: "0.85rem" }}>
               Submissions appear here automatically once your website forms include the hidden fields and visitors convert.
             </p>
           </div>
         ) : (
-          <div className="table-container" style={{ background: "var(--color-card, #1a1a26)", borderRadius: "10px", border: "1px solid var(--color-border)" }}>
+          <div className="table-container">
             <table className="leads-table">
               <thead>
                 <tr>
@@ -364,7 +375,7 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
               <tbody>
                 {leadList.map((lead) => (
                   <tr key={lead.id}>
-                    <td style={{ fontWeight: 500 }}>{lead.name ?? "—"}</td>
+                    <td style={{ fontWeight: 600, color: "var(--sorget-dark, #3A313C)" }}>{lead.name ?? "—"}</td>
                     <td style={{ color: "var(--text-secondary)" }}>{lead.email ?? "—"}</td>
                     <td>
                       <span className={channelBadgeClass(lead.channel)}>
@@ -375,9 +386,10 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
                     <td>{lead.medium ?? "—"}</td>
                     <td
                       style={{
-                        fontFamily: "monospace",
+                        fontFamily: "'SF Mono', Consolas, monospace",
                         fontSize: "0.75rem",
-                        color: "#3ecfcf",
+                        color: "var(--sorget-pink, #BB0C68)",
+                        fontWeight: 600,
                       }}
                     >
                       {lead.gclid ? lead.gclid.slice(0, 16) + "…" : "—"}

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { acceptInvitationAction } from "@/app/actions/team";
@@ -11,8 +12,8 @@ interface PageProps {
 }
 
 export const metadata = {
-  title: "Accept Workspace Invitation — Attributer",
-  description: "Join your team on Attributer.",
+  title: "Accept Workspace Invitation — Sorget",
+  description: "Join your team on Sorget.",
 };
 
 export default async function AcceptInvitePage({ params, searchParams }: PageProps) {
@@ -32,14 +33,16 @@ export default async function AcceptInvitePage({ params, searchParams }: PagePro
 
   if (invErr || !invitation) {
     return (
-      <div style={{ maxWidth: "500px", margin: "4rem auto", padding: "2rem", textAlign: "center", background: "#1e293b", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)" }}>
-        <h1 style={{ fontSize: "1.5rem", color: "#ef4444", marginBottom: "1rem" }}>Invalid Invitation</h1>
-        <p style={{ color: "#94a3b8", marginBottom: "2rem" }}>
-          This invitation link is invalid or has been revoked.
-        </p>
-        <Link href="/login" className="btn btn-primary" style={{ padding: "0.5rem 1.25rem" }}>
-          Go to Sign In
-        </Link>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--sorget-bg, #f1f5f9)", padding: "1.5rem" }}>
+        <div style={{ maxWidth: "460px", width: "100%", padding: "2.5rem 2rem", textAlign: "center", background: "#ffffff", borderRadius: "14px", border: "1px solid #e2e8f0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}>
+          <h1 style={{ fontSize: "1.5rem", color: "#dc2626", marginBottom: "0.75rem", fontWeight: 700 }}>Invalid Invitation</h1>
+          <p style={{ color: "var(--sorget-grey, #64748b)", marginBottom: "2rem", fontSize: "0.95rem" }}>
+            This invitation link is invalid or has been revoked.
+          </p>
+          <Link href="/login" className="btn btn-primary" style={{ padding: "0.6rem 1.5rem", textDecoration: "none" }}>
+            Go to Sign In
+          </Link>
+        </div>
       </div>
     );
   }
@@ -49,14 +52,16 @@ export default async function AcceptInvitePage({ params, searchParams }: PagePro
 
   if (!isValid) {
     return (
-      <div style={{ maxWidth: "500px", margin: "4rem auto", padding: "2rem", textAlign: "center", background: "#1e293b", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)" }}>
-        <h1 style={{ fontSize: "1.5rem", color: "#f59e0b", marginBottom: "1rem" }}>Invitation Expired</h1>
-        <p style={{ color: "#94a3b8", marginBottom: "2rem" }}>
-          This invitation to join <strong>{workspaceName}</strong> has expired or already been accepted.
-        </p>
-        <Link href="/login" className="btn btn-primary" style={{ padding: "0.5rem 1.25rem" }}>
-          Go to Sign In
-        </Link>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--sorget-bg, #f1f5f9)", padding: "1.5rem" }}>
+        <div style={{ maxWidth: "460px", width: "100%", padding: "2.5rem 2rem", textAlign: "center", background: "#ffffff", borderRadius: "14px", border: "1px solid #e2e8f0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}>
+          <h1 style={{ fontSize: "1.5rem", color: "#b45309", marginBottom: "0.75rem", fontWeight: 700 }}>Invitation Expired</h1>
+          <p style={{ color: "var(--sorget-grey, #64748b)", marginBottom: "2rem", fontSize: "0.95rem" }}>
+            This invitation to join <strong>{workspaceName}</strong> has expired or already been accepted.
+          </p>
+          <Link href="/login" className="btn btn-primary" style={{ padding: "0.6rem 1.5rem", textDecoration: "none" }}>
+            Go to Sign In
+          </Link>
+        </div>
       </div>
     );
   }
@@ -72,54 +77,58 @@ export default async function AcceptInvitePage({ params, searchParams }: PagePro
   }
 
   return (
-    <div style={{ maxWidth: "500px", margin: "4rem auto", padding: "2rem", textAlign: "center", background: "#1e293b", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)" }}>
-      <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>⚡</div>
-      <h1 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>You&apos;re Invited!</h1>
-      <p style={{ color: "#94a3b8", marginBottom: "1.5rem" }}>
-        You have been invited to join <strong>{workspaceName}</strong> as a{" "}
-        <span style={{ textTransform: "capitalize", color: "#818cf8", fontWeight: 600 }}>{invitation.role}</span>.
-      </p>
-
-      {queryError && (
-        <div className="alert alert-error" style={{ marginBottom: "1.5rem" }}>
-          {queryError}
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--sorget-bg, #f1f5f9)", padding: "1.5rem" }}>
+      <div style={{ maxWidth: "460px", width: "100%", padding: "2.5rem 2rem", textAlign: "center", background: "#ffffff", borderRadius: "14px", border: "1px solid #e2e8f0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.25rem" }}>
+          <Image src="/logo.png" alt="Sorget Logo" width={48} height={48} style={{ borderRadius: "10px" }} />
         </div>
-      )}
+        <h1 style={{ fontSize: "1.625rem", fontWeight: 700, marginBottom: "0.5rem", color: "var(--sorget-dark, #3A313C)" }}>You&apos;re Invited!</h1>
+        <p style={{ color: "var(--sorget-grey, #64748b)", marginBottom: "1.5rem", fontSize: "0.95rem" }}>
+          You have been invited to join <strong>{workspaceName}</strong> as a{" "}
+          <span style={{ textTransform: "capitalize", color: "var(--sorget-pink, #BB0C68)", fontWeight: 600, background: "rgba(187, 12, 104, 0.08)", padding: "0.2rem 0.5rem", borderRadius: "4px" }}>{invitation.role}</span>.
+        </p>
 
-      {!user ? (
-        <div>
-          <p style={{ fontSize: "0.875rem", color: "#94a3b8", marginBottom: "1.5rem" }}>
-            Please log in or sign up to accept this invitation.
-          </p>
-          <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
-            <Link
-              href={`/login?redirect=${encodeURIComponent(`/invite/${token}`)}`}
-              className="btn btn-primary"
-              style={{ padding: "0.5rem 1.25rem" }}
-            >
-              Sign In
-            </Link>
-            <Link
-              href={`/signup?redirect=${encodeURIComponent(`/invite/${token}`)}`}
-              className="btn btn-secondary"
-              style={{ padding: "0.5rem 1.25rem" }}
-            >
-              Create Account
-            </Link>
+        {queryError && (
+          <div className="alert alert-error" style={{ marginBottom: "1.5rem" }}>
+            {queryError}
           </div>
-        </div>
-      ) : (
-        <div>
-          <p style={{ fontSize: "0.875rem", color: "#94a3b8", marginBottom: "1.5rem" }}>
-            Logged in as <strong>{user.email}</strong>
-          </p>
-          <form action={handleAccept}>
-            <button type="submit" className="btn btn-primary" style={{ padding: "0.6rem 2rem", fontSize: "1rem" }}>
-              Accept Invitation
-            </button>
-          </form>
-        </div>
-      )}
+        )}
+
+        {!user ? (
+          <div>
+            <p style={{ fontSize: "0.875rem", color: "var(--sorget-grey, #64748b)", marginBottom: "1.5rem" }}>
+              Please log in or sign up to accept this invitation.
+            </p>
+            <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
+              <Link
+                href={`/login?redirect=${encodeURIComponent(`/invite/${token}`)}`}
+                className="btn btn-primary"
+                style={{ padding: "0.6rem 1.5rem", textDecoration: "none" }}
+              >
+                Sign In
+              </Link>
+              <Link
+                href={`/signup?redirect=${encodeURIComponent(`/invite/${token}`)}`}
+                className="btn btn-secondary"
+                style={{ padding: "0.6rem 1.5rem", textDecoration: "none" }}
+              >
+                Create Account
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p style={{ fontSize: "0.875rem", color: "var(--sorget-grey, #64748b)", marginBottom: "1.5rem" }}>
+              Logged in as <strong>{user.email}</strong>
+            </p>
+            <form action={handleAccept}>
+              <button type="submit" className="btn btn-primary" style={{ padding: "0.75rem 2.25rem", fontSize: "1rem", width: "100%" }}>
+                Accept Invitation
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

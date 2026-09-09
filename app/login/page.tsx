@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { login } from "@/app/actions/auth";
 
 interface PageProps {
@@ -6,8 +7,8 @@ interface PageProps {
 }
 
 export const metadata = {
-  title: "Sign In — Attributer",
-  description: "Sign in to your Attributer account.",
+  title: "Sign In — Sorget",
+  description: "Sign in to your Sorget account.",
 };
 
 export default async function LoginPage({ searchParams }: PageProps) {
@@ -18,24 +19,35 @@ export default async function LoginPage({ searchParams }: PageProps) {
   return (
     <div className="page">
       <div className="card">
-        {/* Logo */}
-        <div className="logo">
-          <div className="logo-icon">⚡</div>
-          <span>Attributer</span>
-        </div>
+        {/* Brand Logo */}
+        <Link href="/" className="logo">
+          <Image
+            src="/logo.png"
+            alt="Sorget Logo"
+            width={34}
+            height={34}
+            className="logo-img"
+            priority
+          />
+          <span>Sorget</span>
+        </Link>
 
         <h1>Welcome back</h1>
-        <p style={{ marginBottom: "2rem" }}>Sign in to your account.</p>
+        <p style={{ marginBottom: "2rem", color: "var(--text-muted)" }}>
+          Sign in to your Sorget account.
+        </p>
 
         {error && (
           <div className="alert alert-error" role="alert">
-            {error}
+            <span>⚠️</span>
+            <span>{error}</span>
           </div>
         )}
 
         {notice && (
           <div className="alert alert-success" role="status">
-            {notice}
+            <span>✓</span>
+            <span>{notice}</span>
           </div>
         )}
 
@@ -52,10 +64,18 @@ export default async function LoginPage({ searchParams }: PageProps) {
             />
           </div>
 
-          <div className="form-group" style={{ marginBottom: "1.5rem" }}>
+          <div className="form-group" style={{ marginBottom: "1.75rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <label htmlFor="login-password">Password</label>
-              <Link href="/forgot-password" style={{ fontSize: "0.8125rem", color: "var(--accent, #6366f1)" }}>
+              <Link
+                href="/forgot-password"
+                style={{
+                  fontSize: "0.8125rem",
+                  color: "var(--sorget-pink)",
+                  textDecoration: "none",
+                  fontWeight: 600,
+                }}
+              >
                 Forgot password?
               </Link>
             </div>
@@ -70,14 +90,14 @@ export default async function LoginPage({ searchParams }: PageProps) {
           </div>
 
           <button id="login-submit" type="submit" className="btn btn-primary">
-            Log In
+            Sign In
           </button>
         </form>
 
         <div className="auth-footer">
           Don&apos;t have an account?{" "}
           <Link href="/signup" id="signup-link">
-            Sign up
+            Sign up free
           </Link>
         </div>
       </div>

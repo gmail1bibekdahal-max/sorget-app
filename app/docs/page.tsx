@@ -1,8 +1,9 @@
-﻿import Link from "next/link";
+import Link from "next/link";
+import Image from "next/image";
 
 export const metadata = {
-  title: "Documentation & Implementation Guide — Attributer",
-  description: "Comprehensive guides for installing Attributer on WordPress, Webflow, HTML, HubSpot, and custom form frameworks.",
+  title: "Documentation & Implementation Guide — Sorget",
+  description: "Comprehensive guides for installing Sorget on WordPress, Webflow, HTML, HubSpot, and custom form frameworks.",
 };
 
 export default function DocsPage() {
@@ -10,46 +11,42 @@ export default function DocsPage() {
     {
       id: "quick-start",
       title: "1. Quick Start (HTML Snippet)",
-      content: `Add the Attributer tracking script before the </head> tag on every page of your website:
+      content: `Add the Sorget tracking script before the </head> tag on every page of your website:
 
 <script
-  src="https://your-domain.com/sdk/v1/attributer.js"
+  src="https://app.sorget.site/attributer.js"
   data-tracking-id="attr_your_tracking_id"
   async
 ></script>
 
-Once installed, Attributer automatically listens for visits, parses UTM parameters and Google Ads click identifiers (GCLID, GBRAID), and writes the attribution data to form hidden fields.`,
+Once installed, Sorget automatically listens for visits, parses UTM parameters and Google Ads click identifiers (GCLID, GBRAID), and writes the attribution data to form hidden fields.`,
     },
     {
       id: "hidden-fields",
       title: "2. Form Hidden Fields Reference",
-      content: `Add these hidden inputs to your website forms. Attributer automatically discovers and populates them:
+      content: `Add these hidden inputs to your website forms. Sorget automatically discovers and populates them:
 
 • channel              (e.g. Paid Search, Paid Social, Organic Search, Direct)
-• source               (e.g. google, linkedin, newsletter)
-• medium               (e.g. cpc, paid_social, email)
-• campaign             (e.g. q1_growth, brand_2026)
-• drilldown1           (e.g. google, linkedin)
-• drilldown2           (e.g. brand_campaign_name)
-• drilldown3           (e.g. ad_variant_headline)
-• gclid                (Google Ads click ID)
-• landing_page_group   (e.g. /features, /pricing)
-• submit_page          (URL where the form was submitted)`,
+• channeldrilldown1    (e.g. google, linkedin, bing)
+• channeldrilldown2    (e.g. campaign_name, search_network)
+• channeldrilldown3    (e.g. ad_group, keyword_term, creative_id)
+• landingpage          (e.g. /pricing, /request-demo)
+• landingpagegroup     (e.g. /features, /solutions, /blog)`,
     },
     {
       id: "crm-mapping",
       title: "3. CRM & Form Builder Compatibility",
-      content: `Attributer natively supports standard field names across popular form builders and CRMs:
+      content: `Sorget natively supports standard field names across popular form builders and CRMs:
 
-• HubSpot: Automatically fills fields like hs_lead_source and custom contact properties.
-• Salesforce: Maps to LeadSource, First_Click_Source__c, and First_Click_Medium__c.
-• WordPress / Gravity Forms / Contact Form 7: Maps wpcf7-channel, gform_channel, and standard form inputs.
-• Webflow & Typeform: Supports data-attributer-field="channel" attribute selectors.`,
+• HubSpot: Automatically fills channel, drilldown, and landing page contact properties via OAuth sync.
+• Webflow & WordPress: Automatically populates hidden inputs named channel, channeldrilldown1, etc.
+• Gravity Forms & Contact Form 7: Supports standard hidden input name matching.
+• Custom Forms & HTML: Works out of the box with any form with corresponding input names.`,
     },
     {
       id: "webhooks-api",
       title: "4. Outbound Webhooks & API",
-      content: `Whenever a lead is created, Attributer dispatches an HTTP POST webhook with a timing-safe HMAC-SHA256 signature in the X-Attributer-Signature header.
+      content: `Whenever a lead is created, Sorget dispatches an HTTP POST webhook with a timing-safe HMAC-SHA256 signature in the X-Sorget-Signature header.
 
 Verify signatures using your webhook secret:
 const expected = "sha256=" + crypto.createHmac("sha256", secret).update(rawBody).digest("hex");`,
@@ -57,43 +54,44 @@ const expected = "sha256=" + crypto.createHmac("sha256", secret).update(rawBody)
   ];
 
   return (
-    <div style={{ background: "#0a0f1d", color: "#f8fafc", minHeight: "100vh" }}>
-      <nav style={{ padding: "1.25rem 2rem", borderBottom: "1px solid rgba(255, 255, 255, 0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none", color: "#fff", fontWeight: 700 }}>
-          <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "linear-gradient(135deg, #6366f1, #3b82f6)", display: "flex", alignItems: "center", justifyContent: "center" }}>⚡</div>
-          <span>Attributer Docs</span>
+    <div style={{ background: "var(--sorget-bg, #f1f5f9)", color: "var(--sorget-dark, #3A313C)", minHeight: "100vh" }}>
+      <nav style={{ background: "#ffffff", padding: "1.25rem 2rem", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", color: "var(--sorget-dark, #3A313C)", fontWeight: 700, fontSize: "1.125rem" }}>
+          <Image src="/logo.png" alt="Sorget Logo" width={28} height={28} style={{ borderRadius: "6px" }} />
+          <span>Sorget Docs</span>
         </Link>
-        <Link href="/dashboard" style={{ color: "#818cf8", textDecoration: "none", fontSize: "0.875rem" }}>
+        <Link href="/dashboard" style={{ color: "var(--sorget-pink, #BB0C68)", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>
           Go to Dashboard →
         </Link>
       </nav>
 
       <div style={{ maxWidth: "900px", margin: "0 auto", padding: "3rem 1.5rem" }}>
-        <h1 style={{ fontSize: "2.5rem", fontWeight: 800, marginBottom: "0.5rem" }}>Documentation &amp; Guides</h1>
-        <p style={{ color: "#94a3b8", fontSize: "1.125rem", marginBottom: "3rem" }}>
-          Everything you need to install, configure, and integrate Attributer with your marketing stack.
+        <h1 style={{ fontSize: "2.25rem", fontWeight: 800, marginBottom: "0.5rem", color: "var(--sorget-dark, #3A313C)" }}>Documentation &amp; Guides</h1>
+        <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "1.05rem", marginBottom: "2.5rem" }}>
+          Everything you need to install, configure, and integrate Sorget with your marketing stack.
         </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "2.5rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
           {sections.map((section) => (
             <div
               key={section.id}
               id={section.id}
               style={{
-                background: "#0f172a",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "12px",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "14px",
                 padding: "2rem",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               }}
             >
-              <h2 style={{ fontSize: "1.375rem", margin: "0 0 1rem", color: "#f1f5f9" }}>{section.title}</h2>
+              <h2 style={{ fontSize: "1.25rem", margin: "0 0 1rem", color: "var(--sorget-dark, #3A313C)", fontWeight: 700 }}>{section.title}</h2>
               <pre
                 style={{
-                  background: "#060913",
+                  background: "#1e293b",
                   padding: "1.25rem",
                   borderRadius: "8px",
-                  fontSize: "0.875rem",
-                  color: "#cbd5e1",
+                  fontSize: "0.85rem",
+                  color: "#38bdf8",
                   overflowX: "auto",
                   whiteSpace: "pre-wrap",
                   fontFamily: "var(--font-mono, monospace)",

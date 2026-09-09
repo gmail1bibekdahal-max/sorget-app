@@ -98,85 +98,82 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
 
   // Check HubSpot connection status for active project's workspace
   let isHubSpotConnected = false;
-  let hubspotOAuthUrl: string | null = null;
-
   if (activeProject?.workspace_id) {
     const { data: crmConn } = await supabase
       .from("crm_connections")
-      .select("id, is_active")
+      .select("id, status")
       .eq("workspace_id", activeProject.workspace_id)
       .eq("provider", "hubspot")
-      .eq("is_active", true)
-      .single();
+      .eq("status", "connected")
+      .maybeSingle();
 
     isHubSpotConnected = Boolean(crmConn);
-
-    const clientId = (process.env.HUBSPOT_CLIENT_ID || "").trim();
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
-    const redirectUri = `${siteUrl}/api/crm/hubspot/callback`;
-
-    if (clientId && clientId !== "your_actual_client_id") {
-      const { state } = generateOAuthState(
-        activeProject.workspace_id,
-        activeProject.id
-      );
-      hubspotOAuthUrl = buildHubSpotOAuthUrl(clientId, redirectUri, state);
-    }
   }
 
-  // Check webhooks for active project
-  let webhookCount = 0;
-  if (activeProject) {
-    const { count } = await supabase
-      .from("webhooks")
-      .select("id", { count: "exact", head: true })
-      .eq("project_id", activeProject.id);
-    webhookCount = count ?? 0;
-  }
-
-  // Check if any leads have been captured
+  // Count leads/submissions for active project
   let leadCount = 0;
   if (activeProject) {
     const { count } = await supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
       .eq("project_id", activeProject.id);
+
     leadCount = count ?? 0;
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-  const scriptSrc = siteUrl ? `${siteUrl}/attributer.js` : "/attributer.js";
-  const trackingSnippet = activeProject
-    ? `<script src="${scriptSrc}" data-tracking-id="${activeProject.tracking_id}"></script>`
-    : `<script src="${scriptSrc}" data-tracking-id="attr_YOUR_TRACKING_ID"></script>`;
+  // Count outbound webhooks
+  let webhookCount = 0;
+  if (activeProject?.workspace_id) {
+    const { count } = await supabase
+      .from("webhooks")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", activeProject.workspace_id);
 
-  // Step completion status
+    webhookCount = count ?? 0;
+  }
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
+  const hubspotOAuthUrl =
+    activeProject && activeProject.workspace_id
+      ? buildHubSpotOAuthUrl({
+          state: generateOAuthState(activeProject.workspace_id, activeProject.id),
+          redirectUri: `${siteUrl}/api/crm/hubspot/callback`,
+        })
+      : null;
+
+  // Compute step statuses
   const step1Complete = Boolean(activeProject);
-  const step2Complete = step1Complete; // script is generated
-  const step3Complete = true; // reference always available
+  const step2Complete = Boolean(activeProject?.tracking_id);
+  const step3Complete = true; // Field schema always ready to copy
   const step4Complete = isHubSpotConnected || webhookCount > 0;
   const step5Complete = leadCount > 0;
-  const isSetupComplete = step1Complete && (step4Complete || step5Complete);
+  const isSetupComplete = step1Complete && step2Complete && step5Complete;
+
+  const appSiteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const scriptSrc = appSiteUrl ? `${appSiteUrl}/attributer.js` : "/attributer.js";
+  const trackingSnippet = activeProject
+    ? `<script src="${scriptSrc}" data-tracking-id="${activeProject.tracking_id}"></script>`
+    : `<script src="${scriptSrc}" data-tracking-id="YOUR_TRACKING_ID"></script>`;
 
   return (
-    <div className="dashboard-layout" style={{ minHeight: "100vh" }}>
+    <div className="dashboard-layout">
       <MainNavigation
         userEmail={user.email}
         workspaces={userWorkspaces}
-        activeWorkspaceId={activeProject?.workspace_id || undefined}
+        activeWorkspaceId={activeProject?.workspace_id ?? undefined}
       />
 
-      <main style={{ maxWidth: "900px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
-        {/* Banners */}
+      <main className="dashboard-main" style={{ maxWidth: "1000px" }}>
+        {/* Alerts */}
         {errorMsg && (
-          <div className="alert alert-error" style={{ marginBottom: "1.5rem" }}>
-            {errorMsg}
+          <div className="alert alert-error">
+            <span>⚠️</span><span>{errorMsg}</span>
           </div>
         )}
         {successMsg && (
-          <div className="alert alert-success" style={{ marginBottom: "1.5rem" }}>
-            {successMsg}
+          <div className="alert alert-success">
+            <span>✓</span><span>{successMsg}</span>
           </div>
         )}
 
@@ -189,8 +186,9 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                color: "#3ecfcf",
-                background: "rgba(62, 207, 207, 0.12)",
+                color: "var(--sorget-pink, #BB0C68)",
+                background: "var(--sorget-pink-light, rgba(187, 12, 104, 0.08))",
+                border: "1px solid var(--sorget-pink-border, rgba(187, 12, 104, 0.25))",
                 padding: "0.25rem 0.65rem",
                 borderRadius: "999px",
               }}
@@ -203,10 +201,10 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
               </span>
             )}
           </div>
-          <h1 style={{ fontSize: "2rem", fontWeight: 700, margin: "0.25rem 0 0.5rem 0" }}>
+          <h1 style={{ fontSize: "2rem", fontWeight: 800, color: "var(--sorget-dark, #3A313C)", margin: "0.25rem 0 0.5rem 0" }}>
             Getting Started with Sorget
           </h1>
-          <p style={{ color: "var(--text-secondary, #94a3b8)", fontSize: "0.95rem", margin: 0, lineHeight: 1.6 }}>
+          <p style={{ color: "var(--text-muted, #64748b)", fontSize: "0.95rem", margin: 0, lineHeight: 1.6 }}>
             Follow these 6 simple steps to install the Sorget tracking script, add hidden form fields, and send clean marketing attribution straight into your CRM.
           </p>
         </div>
@@ -218,14 +216,15 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
               display: "flex",
               alignItems: "center",
               gap: "0.75rem",
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "8px",
+              background: "#ffffff",
+              border: "1.5px solid var(--color-border, #e2e8f0)",
+              borderRadius: "10px",
               padding: "0.75rem 1rem",
               marginBottom: "2rem",
+              boxShadow: "var(--shadow-sm)",
             }}
           >
-            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 600 }}>
               Configuring website:
             </span>
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -234,23 +233,23 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                   key={p.id}
                   href={`/dashboard/getting-started?project=${p.id}`}
                   style={{
-                    padding: "0.25rem 0.65rem",
+                    padding: "0.3rem 0.75rem",
                     borderRadius: "6px",
                     fontSize: "0.8125rem",
                     textDecoration: "none",
-                    fontWeight: p.id === activeProject?.id ? 600 : 400,
+                    fontWeight: p.id === activeProject?.id ? 700 : 500,
                     background:
                       p.id === activeProject?.id
-                        ? "rgba(108, 99, 255, 0.25)"
-                        : "rgba(255, 255, 255, 0.05)",
+                        ? "var(--sorget-pink, #BB0C68)"
+                        : "#f8fafc",
                     color:
                       p.id === activeProject?.id
                         ? "#ffffff"
-                        : "var(--text-secondary)",
+                        : "var(--sorget-dark, #3A313C)",
                     border:
                       p.id === activeProject?.id
-                        ? "1px solid rgba(108, 99, 255, 0.5)"
-                        : "1px solid transparent",
+                        ? "1px solid var(--sorget-pink, #BB0C68)"
+                        : "1px solid var(--color-border, #e2e8f0)",
                   }}
                 >
                   {p.name}
@@ -268,18 +267,19 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
             className="card"
             style={{
               maxWidth: "100%",
-              padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              padding: "1.75rem 2rem",
+              background: "#ffffff",
+              border: "1.5px solid var(--color-border, #e2e8f0)",
               borderRadius: "14px",
+              boxShadow: "var(--shadow-sm)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
               <div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#6c63ff", textTransform: "uppercase" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sorget-pink, #BB0C68)", textTransform: "uppercase" }}>
                   Step 1
                 </span>
-                <h2 style={{ fontSize: "1.25rem", margin: "0.25rem 0 0 0", color: "#f0f0ff" }}>
+                <h2 style={{ fontSize: "1.35rem", margin: "0.25rem 0 0 0", color: "var(--sorget-dark, #3A313C)" }}>
                   Add Website
                 </h2>
               </div>
@@ -289,8 +289,9 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                   fontWeight: 600,
                   padding: "0.3rem 0.75rem",
                   borderRadius: "999px",
-                  background: step1Complete ? "rgba(62, 207, 142, 0.15)" : "rgba(245, 158, 11, 0.15)",
-                  color: step1Complete ? "#3ecf8e" : "#f59e0b",
+                  background: step1Complete ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.12)",
+                  color: step1Complete ? "#059669" : "#b45309",
+                  border: step1Complete ? "1px solid rgba(16, 185, 129, 0.25)" : "1px solid rgba(245, 158, 11, 0.25)",
                 }}
               >
                 {step1Complete ? "✓ Website Added" : "Action Required"}
@@ -300,28 +301,28 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
             {activeProject ? (
               <div
                 style={{
-                  background: "rgba(255, 255, 255, 0.03)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  borderRadius: "8px",
-                  padding: "1rem",
+                  background: "#f8fafc",
+                  border: "1px solid var(--color-border, #e2e8f0)",
+                  borderRadius: "10px",
+                  padding: "1rem 1.25rem",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: 600, color: "#ffffff" }}>{activeProject.name}</div>
-                  <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-                    {activeProject.website || "No URL specified"} · Tracking ID: <code style={{ color: "#3ecfcf" }}>{activeProject.tracking_id}</code>
+                  <div style={{ fontWeight: 700, color: "var(--sorget-dark, #3A313C)" }}>{activeProject.name}</div>
+                  <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
+                    {activeProject.website || "No URL specified"} · Tracking ID: <code style={{ color: "var(--sorget-pink)", fontWeight: 700 }}>{activeProject.tracking_id}</code>
                   </div>
                 </div>
                 <Link
                   href="/dashboard"
                   style={{
-                    fontSize: "0.8125rem",
-                    color: "#6c63ff",
+                    fontSize: "0.85rem",
+                    color: "var(--sorget-pink, #BB0C68)",
                     textDecoration: "none",
-                    fontWeight: 500,
+                    fontWeight: 600,
                   }}
                 >
                   Manage Websites →
@@ -329,7 +330,7 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
               </div>
             ) : (
               <div>
-                <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.25rem" }}>
+                <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.25rem" }}>
                   Register your website property to generate your unique tracking ID.
                 </p>
                 <form
@@ -342,7 +343,7 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                   }}
                 >
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label htmlFor="step1-name" style={{ fontSize: "0.8125rem", fontWeight: 500 }}>
+                    <label htmlFor="step1-name" style={{ fontSize: "0.8125rem", fontWeight: 600 }}>
                       Website Name *
                     </label>
                     <input
@@ -354,7 +355,7 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                     />
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label htmlFor="step1-website" style={{ fontSize: "0.8125rem", fontWeight: 500 }}>
+                    <label htmlFor="step1-website" style={{ fontSize: "0.8125rem", fontWeight: 600 }}>
                       Website URL (optional)
                     </label>
                     <input
@@ -367,7 +368,7 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                   <button
                     type="submit"
                     className="btn btn-primary"
-                    style={{ height: "42px" }}
+                    style={{ height: "42px", borderRadius: "8px" }}
                   >
                     Add Website →
                   </button>
@@ -381,18 +382,19 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
             className="card"
             style={{
               maxWidth: "100%",
-              padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              padding: "1.75rem 2rem",
+              background: "#ffffff",
+              border: "1.5px solid var(--color-border, #e2e8f0)",
               borderRadius: "14px",
+              boxShadow: "var(--shadow-sm)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
               <div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#6c63ff", textTransform: "uppercase" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sorget-pink, #BB0C68)", textTransform: "uppercase" }}>
                   Step 2
                 </span>
-                <h2 style={{ fontSize: "1.25rem", margin: "0.25rem 0 0 0", color: "#f0f0ff" }}>
+                <h2 style={{ fontSize: "1.35rem", margin: "0.25rem 0 0 0", color: "var(--sorget-dark, #3A313C)" }}>
                   Install Sorget Tracking Code
                 </h2>
               </div>
@@ -402,24 +404,25 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                   fontWeight: 600,
                   padding: "0.3rem 0.75rem",
                   borderRadius: "999px",
-                  background: step2Complete ? "rgba(62, 207, 142, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                  color: step2Complete ? "#3ecf8e" : "var(--text-muted)",
+                  background: step2Complete ? "rgba(16, 185, 129, 0.1)" : "#f1f5f9",
+                  color: step2Complete ? "#059669" : "var(--text-muted)",
+                  border: step2Complete ? "1px solid rgba(16, 185, 129, 0.25)" : "1px solid #e2e8f0",
                 }}
               >
                 {step2Complete ? "Snippet Ready" : "Pending Step 1"}
               </span>
             </div>
 
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1rem", lineHeight: 1.5 }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1rem", lineHeight: 1.5 }}>
               Paste this tracking snippet into the <code>&lt;head&gt;</code> of your website template on every page you wish to track.
             </p>
 
             <div
               style={{
-                background: "#0d0d14",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "8px",
-                padding: "1rem",
+                background: "#1e293b",
+                border: "1px solid #334155",
+                borderRadius: "10px",
+                padding: "1rem 1.25rem",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
@@ -430,8 +433,8 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                 id="getting-started-snippet"
                 style={{
                   fontSize: "0.85rem",
-                  color: "#3ecfcf",
-                  fontFamily: "monospace",
+                  color: "#38bdf8",
+                  fontFamily: "'SF Mono', Consolas, Monaco, monospace",
                   wordBreak: "break-all",
                 }}
               >
@@ -446,18 +449,19 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
             className="card"
             style={{
               maxWidth: "100%",
-              padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              padding: "1.75rem 2rem",
+              background: "#ffffff",
+              border: "1.5px solid var(--color-border, #e2e8f0)",
               borderRadius: "14px",
+              boxShadow: "var(--shadow-sm)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
               <div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#6c63ff", textTransform: "uppercase" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sorget-pink, #BB0C68)", textTransform: "uppercase" }}>
                   Step 3
                 </span>
-                <h2 style={{ fontSize: "1.25rem", margin: "0.25rem 0 0 0", color: "#f0f0ff" }}>
+                <h2 style={{ fontSize: "1.35rem", margin: "0.25rem 0 0 0", color: "var(--sorget-dark, #3A313C)" }}>
                   Add Hidden Form Fields
                 </h2>
               </div>
@@ -467,15 +471,16 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                   fontWeight: 600,
                   padding: "0.3rem 0.75rem",
                   borderRadius: "999px",
-                  background: "rgba(62, 207, 142, 0.15)",
-                  color: "#3ecf8e",
+                  background: "rgba(16, 185, 129, 0.1)",
+                  color: "#059669",
+                  border: "1px solid rgba(16, 185, 129, 0.25)",
                 }}
               >
                 Field Schema
               </span>
             </div>
 
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
               Add these 6 hidden fields to any form on your site (Gravity Forms, HubSpot Forms, Webflow, Typeform, or standard HTML). When a visitor submits a form, Sorget automatically discovers and populates them:
             </p>
 
@@ -495,19 +500,21 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                       <td>
                         <code
                           style={{
-                            background: "rgba(108, 99, 255, 0.15)",
-                            color: "#9d96ff",
-                            padding: "0.2rem 0.5rem",
-                            borderRadius: "4px",
+                            background: "var(--sorget-pink-light, rgba(187, 12, 104, 0.08))",
+                            color: "var(--sorget-pink, #BB0C68)",
+                            border: "1px solid var(--sorget-pink-border, rgba(187, 12, 104, 0.25))",
+                            padding: "0.25rem 0.55rem",
+                            borderRadius: "6px",
                             fontSize: "0.85rem",
-                            fontWeight: 600,
+                            fontWeight: 700,
+                            fontFamily: "'SF Mono', Consolas, monospace",
                           }}
                         >
                           {field.name}
                         </code>
                       </td>
-                      <td style={{ fontWeight: 500 }}>{field.label}</td>
-                      <td style={{ color: "#94a3b8", fontSize: "0.8125rem" }}>
+                      <td style={{ fontWeight: 600, color: "var(--sorget-dark, #3A313C)" }}>{field.label}</td>
+                      <td style={{ color: "var(--text-muted)", fontSize: "0.8125rem" }}>
                         {field.example}
                       </td>
                       <td style={{ textAlign: "right" }}>
@@ -525,18 +532,19 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
             className="card"
             style={{
               maxWidth: "100%",
-              padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              padding: "1.75rem 2rem",
+              background: "#ffffff",
+              border: "1.5px solid var(--color-border, #e2e8f0)",
               borderRadius: "14px",
+              boxShadow: "var(--shadow-sm)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
               <div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#6c63ff", textTransform: "uppercase" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sorget-pink, #BB0C68)", textTransform: "uppercase" }}>
                   Step 4
                 </span>
-                <h2 style={{ fontSize: "1.25rem", margin: "0.25rem 0 0 0", color: "#f0f0ff" }}>
+                <h2 style={{ fontSize: "1.35rem", margin: "0.25rem 0 0 0", color: "var(--sorget-dark, #3A313C)" }}>
                   Connect HubSpot / Webhook
                 </h2>
               </div>
@@ -546,15 +554,16 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                   fontWeight: 600,
                   padding: "0.3rem 0.75rem",
                   borderRadius: "999px",
-                  background: step4Complete ? "rgba(62, 207, 142, 0.15)" : "rgba(245, 158, 11, 0.15)",
-                  color: step4Complete ? "#3ecf8e" : "#f59e0b",
+                  background: step4Complete ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.12)",
+                  color: step4Complete ? "#059669" : "#b45309",
+                  border: step4Complete ? "1px solid rgba(16, 185, 129, 0.25)" : "1px solid rgba(245, 158, 11, 0.25)",
                 }}
               >
                 {step4Complete ? "✓ Integration Configured" : "Recommended"}
               </span>
             </div>
 
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
               Sorget passes attribution directly to your external tools. Connect HubSpot via OAuth or set up an outbound webhook.
             </p>
 
@@ -568,10 +577,10 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
               {/* HubSpot Card */}
               <div
                 style={{
-                  background: "rgba(255, 255, 255, 0.03)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  borderRadius: "10px",
-                  padding: "1.25rem",
+                  background: "#f8fafc",
+                  border: "1.5px solid var(--color-border, #e2e8f0)",
+                  borderRadius: "12px",
+                  padding: "1.35rem",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
@@ -580,22 +589,22 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
                     <span style={{ fontSize: "1.25rem" }}>🟠</span>
-                    <strong style={{ color: "#ffffff" }}>HubSpot CRM</strong>
+                    <strong style={{ color: "var(--sorget-dark, #3A313C)", fontSize: "1.05rem" }}>HubSpot CRM</strong>
                   </div>
-                  <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", margin: 0 }}>
+                  <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
                     Automatically creates and enriches contacts with channel and campaign attribution properties.
                   </p>
                 </div>
-                <div style={{ marginTop: "1rem" }}>
+                <div style={{ marginTop: "1.25rem" }}>
                   {isHubSpotConnected ? (
                     <span
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "0.35rem",
-                        color: "#3ecf8e",
+                        color: "#059669",
                         fontSize: "0.85rem",
-                        fontWeight: 600,
+                        fontWeight: 700,
                       }}
                     >
                       ✓ Connected &amp; Syncing
@@ -604,15 +613,15 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                     <a
                       href={hubspotOAuthUrl}
                       className="btn btn-primary btn-sm"
-                      style={{ textDecoration: "none", display: "inline-block" }}
+                      style={{ textDecoration: "none", display: "inline-block", borderRadius: "8px" }}
                     >
                       Connect HubSpot →
                     </a>
                   ) : (
                     <Link
                       href={activeProject ? `/dashboard/projects/${activeProject.id}/integrations` : "/dashboard/integrations"}
-                      className="btn btn-ghost btn-sm"
-                      style={{ textDecoration: "none", display: "inline-block" }}
+                      className="btn btn-secondary btn-sm"
+                      style={{ textDecoration: "none", display: "inline-block", borderRadius: "8px" }}
                     >
                       Configure HubSpot
                     </Link>
@@ -623,10 +632,10 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
               {/* Webhooks Card */}
               <div
                 style={{
-                  background: "rgba(255, 255, 255, 0.03)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  borderRadius: "10px",
-                  padding: "1.25rem",
+                  background: "#f8fafc",
+                  border: "1.5px solid var(--color-border, #e2e8f0)",
+                  borderRadius: "12px",
+                  padding: "1.35rem",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
@@ -635,17 +644,17 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
                     <span style={{ fontSize: "1.25rem" }}>⚡</span>
-                    <strong style={{ color: "#ffffff" }}>Outbound Webhooks</strong>
+                    <strong style={{ color: "var(--sorget-dark, #3A313C)", fontSize: "1.05rem" }}>Outbound Webhooks</strong>
                   </div>
-                  <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", margin: 0 }}>
+                  <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
                     Receive real-time signed JSON payloads on every lead submission for Zapier, Make, or custom backends.
                   </p>
                 </div>
-                <div style={{ marginTop: "1rem" }}>
+                <div style={{ marginTop: "1.25rem" }}>
                   <Link
                     href={activeProject ? `/dashboard/projects/${activeProject.id}/integrations` : "/dashboard/integrations"}
-                    className="btn btn-ghost btn-sm"
-                    style={{ textDecoration: "none", display: "inline-block" }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ textDecoration: "none", display: "inline-block", borderRadius: "8px" }}
                   >
                     {webhookCount > 0 ? `✓ ${webhookCount} Webhook(s) Active` : "Configure Webhooks →"}
                   </Link>
@@ -659,18 +668,19 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
             className="card"
             style={{
               maxWidth: "100%",
-              padding: "1.75rem",
-              background: "var(--color-card, #1a1a26)",
-              border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+              padding: "1.75rem 2rem",
+              background: "#ffffff",
+              border: "1.5px solid var(--color-border, #e2e8f0)",
               borderRadius: "14px",
+              boxShadow: "var(--shadow-sm)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
               <div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#6c63ff", textTransform: "uppercase" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sorget-pink, #BB0C68)", textTransform: "uppercase" }}>
                   Step 5
                 </span>
-                <h2 style={{ fontSize: "1.25rem", margin: "0.25rem 0 0 0", color: "#f0f0ff" }}>
+                <h2 style={{ fontSize: "1.35rem", margin: "0.25rem 0 0 0", color: "var(--sorget-dark, #3A313C)" }}>
                   Test Installation
                 </h2>
               </div>
@@ -680,15 +690,16 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                   fontWeight: 600,
                   padding: "0.3rem 0.75rem",
                   borderRadius: "999px",
-                  background: step5Complete ? "rgba(62, 207, 142, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                  color: step5Complete ? "#3ecf8e" : "var(--text-muted)",
+                  background: step5Complete ? "rgba(16, 185, 129, 0.1)" : "#f1f5f9",
+                  color: step5Complete ? "#059669" : "var(--text-muted)",
+                  border: step5Complete ? "1px solid rgba(16, 185, 129, 0.25)" : "1px solid #e2e8f0",
                 }}
               >
                 {step5Complete ? `✓ ${leadCount} Submissions Verified` : "Pending Verification"}
               </span>
             </div>
 
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
               Use the built-in Installation Tester to inspect your website HTML, verify that the Sorget script tag is found, and ensure forms have the required hidden inputs.
             </p>
 
@@ -697,7 +708,7 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
                 <Link
                   href={`/dashboard/projects/${activeProject.id}/debugger`}
                   className="btn btn-primary btn-sm"
-                  style={{ textDecoration: "none", display: "inline-block" }}
+                  style={{ textDecoration: "none", display: "inline-block", borderRadius: "8px" }}
                 >
                   🧪 Run Test Installation →
                 </Link>
@@ -714,27 +725,28 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
             className="card"
             style={{
               maxWidth: "100%",
-              padding: "1.75rem",
-              background: isSetupComplete ? "rgba(62, 207, 142, 0.08)" : "var(--color-card, #1a1a26)",
+              padding: "1.75rem 2rem",
+              background: isSetupComplete ? "rgba(16, 185, 129, 0.06)" : "#ffffff",
               border: isSetupComplete
-                ? "1px solid rgba(62, 207, 142, 0.3)"
-                : "1px solid var(--color-border, rgba(255,255,255,0.08))",
+                ? "1.5px solid rgba(16, 185, 129, 0.35)"
+                : "1.5px solid var(--color-border, #e2e8f0)",
               borderRadius: "14px",
+              boxShadow: "var(--shadow-sm)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
               <span style={{ fontSize: "1.5rem" }}>🎉</span>
               <div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: isSetupComplete ? "#3ecf8e" : "#6c63ff", textTransform: "uppercase" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: isSetupComplete ? "#059669" : "var(--sorget-pink, #BB0C68)", textTransform: "uppercase" }}>
                   Step 6
                 </span>
-                <h2 style={{ fontSize: "1.25rem", margin: "0.1rem 0 0 0", color: "#f0f0ff" }}>
+                <h2 style={{ fontSize: "1.35rem", margin: "0.1rem 0 0 0", color: "var(--sorget-dark, #3A313C)" }}>
                   Setup Complete
                 </h2>
               </div>
             </div>
 
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
               Once your tracking script is installed and hidden fields are embedded, Sorget works silently in the background. It captures visitor attribution on landing and populates form fields upon submission.
             </p>
 
@@ -742,15 +754,15 @@ export default async function GettingStartedPage({ searchParams }: PageProps) {
               <Link
                 href="/dashboard"
                 className="btn btn-primary btn-sm"
-                style={{ textDecoration: "none", display: "inline-block" }}
+                style={{ textDecoration: "none", display: "inline-block", borderRadius: "8px" }}
               >
                 Go to Websites Dashboard →
               </Link>
               {activeProject && (
                 <Link
                   href={`/dashboard/projects/${activeProject.id}`}
-                  className="btn btn-ghost btn-sm"
-                  style={{ textDecoration: "none", display: "inline-block" }}
+                  className="btn btn-secondary btn-sm"
+                  style={{ textDecoration: "none", display: "inline-block", borderRadius: "8px" }}
                 >
                   View Submission Verification Log →
                 </Link>

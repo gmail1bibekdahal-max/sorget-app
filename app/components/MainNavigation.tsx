@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/actions/auth";
 import { WorkspaceSwitcher, WorkspaceItem } from "./WorkspaceSwitcher";
@@ -70,44 +71,38 @@ export default function MainNavigation({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0.85rem 1.75rem",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-        background: "rgba(18, 18, 26, 0.85)",
-        backdropFilter: "blur(12px)",
+        padding: "0.85rem 2rem",
+        borderBottom: "1px solid var(--color-border, #e2e8f0)",
+        background: "#ffffff",
+        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
         position: "sticky",
         top: 0,
-        zIndex: 100,
+        zIndex: 50,
       }}
     >
       {/* Left: Brand & Navigation */}
-      <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "2.25rem" }}>
         <Link
           href="/dashboard"
           style={{
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
-            gap: "0.5rem",
+            gap: "10px",
             textDecoration: "none",
-            color: "var(--text-primary, #f0f0ff)",
-            fontWeight: 700,
-            fontSize: "1.1rem",
-            letterSpacing: "-0.01em",
+            color: "var(--sorget-dark, #3A313C)",
+            fontWeight: 800,
+            fontSize: "1.35rem",
+            letterSpacing: "-0.5px",
           }}
         >
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "28px",
-              height: "28px",
-              background: "linear-gradient(135deg, #6c63ff 0%, #3ecfcf 100%)",
-              borderRadius: "6px",
-              fontSize: "0.9rem",
-            }}
-          >
-            ⚡
-          </span>
+          <Image
+            src="/logo.png"
+            alt="Sorget Logo"
+            width={30}
+            height={30}
+            style={{ height: "30px", width: "auto", objectFit: "contain" }}
+            priority
+          />
           <span>Sorget</span>
         </Link>
 
@@ -122,16 +117,18 @@ export default function MainNavigation({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.4rem",
-                padding: "0.4rem 0.85rem",
-                borderRadius: "6px",
+                padding: "0.45rem 0.85rem",
+                borderRadius: "8px",
                 fontSize: "0.875rem",
-                fontWeight: item.active ? 600 : 500,
-                color: item.active ? "#ffffff" : "var(--text-secondary, #94a3b8)",
+                fontWeight: item.active ? 700 : 600,
+                color: item.active
+                  ? "var(--sorget-pink, #BB0C68)"
+                  : "var(--sorget-dark, #3A313C)",
                 background: item.active
-                  ? "rgba(108, 99, 255, 0.16)"
+                  ? "var(--sorget-pink-light, rgba(187, 12, 104, 0.08))"
                   : "transparent",
                 border: item.active
-                  ? "1px solid rgba(108, 99, 255, 0.3)"
+                  ? "1px solid var(--sorget-pink-border, rgba(187, 12, 104, 0.25))"
                   : "1px solid transparent",
                 textDecoration: "none",
                 transition: "all 0.15s ease",
@@ -158,7 +155,8 @@ export default function MainNavigation({
             id="nav-user-email"
             style={{
               fontSize: "0.8125rem",
-              color: "var(--text-muted, rgba(240, 240, 255, 0.4))",
+              color: "var(--text-muted, #64748b)",
+              fontWeight: 500,
               maxWidth: "180px",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -175,13 +173,13 @@ export default function MainNavigation({
             id="logout-btn"
             type="submit"
             style={{
-              background: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.25)",
-              color: "#f87171",
-              padding: "0.35rem 0.75rem",
-              borderRadius: "6px",
+              background: "#fff5f5",
+              border: "1px solid #fed7d7",
+              color: "#e53e3e",
+              padding: "0.4rem 0.85rem",
+              borderRadius: "8px",
               fontSize: "0.8125rem",
-              fontWeight: 500,
+              fontWeight: 600,
               cursor: "pointer",
               transition: "all 0.15s ease",
             }}

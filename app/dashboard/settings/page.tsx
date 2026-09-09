@@ -120,10 +120,10 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
         {/* Page Header */}
         <div style={{ marginBottom: "2rem" }}>
-          <h1 style={{ fontSize: "1.875rem", fontWeight: 700, margin: "0 0 0.5rem 0" }}>
+          <h1 style={{ fontSize: "1.875rem", fontWeight: 700, margin: "0 0 0.5rem 0", color: "var(--sorget-dark, #3A313C)" }}>
             Settings
           </h1>
-          <p style={{ color: "var(--text-secondary, #94a3b8)", margin: 0, fontSize: "0.95rem" }}>
+          <p style={{ color: "var(--sorget-grey, #64748b)", margin: 0, fontSize: "0.95rem" }}>
             Manage your workspace details, team access, and subscription plan.
           </p>
         </div>
@@ -150,12 +150,13 @@ export default async function SettingsPage({ searchParams }: PageProps) {
               style={{
                 maxWidth: "100%",
                 padding: "1.75rem",
-                background: "var(--color-card, #1a1a26)",
-                border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
                 borderRadius: "14px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               }}
             >
-              <h2 style={{ fontSize: "1.2rem", margin: "0 0 1.25rem 0", color: "#ffffff" }}>
+              <h2 style={{ fontSize: "1.2rem", margin: "0 0 1.25rem 0", color: "var(--sorget-dark, #3A313C)" }}>
                 Workspace Details
               </h2>
               <form action={updateWorkspace} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
@@ -195,15 +196,15 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                 style={{
                   maxWidth: "100%",
                   padding: "1.75rem",
-                  background: "rgba(239, 68, 68, 0.04)",
-                  border: "1px solid rgba(239, 68, 68, 0.2)",
+                  background: "#fff1f2",
+                  border: "1px solid #fecdd3",
                   borderRadius: "14px",
                 }}
               >
-                <h3 style={{ fontSize: "1.1rem", color: "#f87171", margin: "0 0 0.5rem 0" }}>
+                <h3 style={{ fontSize: "1.1rem", color: "#e11d48", margin: "0 0 0.5rem 0" }}>
                   Delete Workspace
                 </h3>
-                <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
+                <p style={{ color: "#475569", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
                   Permanently delete this workspace and remove all associated website connections and team members.
                 </p>
                 <form action={deleteWorkspace}>
@@ -229,15 +230,16 @@ export default async function SettingsPage({ searchParams }: PageProps) {
               style={{
                 maxWidth: "100%",
                 padding: "1.75rem",
-                background: "var(--color-card, #1a1a26)",
-                border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
                 borderRadius: "14px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               }}
             >
-              <h2 style={{ fontSize: "1.2rem", margin: "0 0 1rem 0", color: "#ffffff" }}>
+              <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.5rem 0", color: "var(--sorget-dark, #3A313C)" }}>
                 Invite Team Member
               </h2>
-              <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
+              <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
                 Give colleagues access to install tracking scripts, view submission verification logs, and manage integrations.
               </p>
               <form
@@ -267,11 +269,11 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                     name="role"
                     defaultValue="member"
                     style={{
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1",
                       borderRadius: "6px",
                       padding: "0.55rem 0.75rem",
-                      color: "#ffffff",
+                      color: "var(--sorget-dark, #3A313C)",
                       fontSize: "0.875rem",
                       width: "100%",
                     }}
@@ -293,12 +295,13 @@ export default async function SettingsPage({ searchParams }: PageProps) {
               style={{
                 maxWidth: "100%",
                 padding: "1.75rem",
-                background: "var(--color-card, #1a1a26)",
-                border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
                 borderRadius: "14px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               }}
             >
-              <h2 style={{ fontSize: "1.2rem", margin: "0 0 1rem 0", color: "#ffffff" }}>
+              <h2 style={{ fontSize: "1.2rem", margin: "0 0 1rem 0", color: "var(--sorget-dark, #3A313C)" }}>
                 Active Members ({currentMembers?.length ?? 1})
               </h2>
               <div className="table-container" style={{ margin: 0 }}>
@@ -316,7 +319,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                       return (
                         <tr key={m.id}>
                           <td>
-                            <div style={{ fontWeight: 500, color: "#ffffff" }}>
+                            <div style={{ fontWeight: 500, color: "var(--sorget-dark, #3A313C)" }}>
                               {isSelf ? `${user.email} (You)` : `User ${m.user_id.slice(0, 8)}…`}
                             </div>
                           </td>
@@ -328,8 +331,8 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                                 borderRadius: "4px",
                                 fontSize: "0.75rem",
                                 fontWeight: 600,
-                                background: m.role === "owner" ? "rgba(108, 99, 255, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                                color: m.role === "owner" ? "#9d96ff" : "var(--text-secondary)",
+                                background: m.role === "owner" ? "rgba(187, 12, 104, 0.1)" : "#f1f5f9",
+                                color: m.role === "owner" ? "var(--sorget-pink, #BB0C68)" : "#475569",
                               }}
                             >
                               {m.role}
@@ -345,9 +348,10 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                                   style={{
                                     background: "none",
                                     border: "none",
-                                    color: "#f87171",
+                                    color: "#dc2626",
                                     fontSize: "0.8125rem",
                                     cursor: "pointer",
+                                    fontWeight: 500,
                                   }}
                                 >
                                   Remove
@@ -365,7 +369,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
               {/* Pending Invitations */}
               {pendingInvitations && pendingInvitations.length > 0 && (
                 <div style={{ marginTop: "2rem" }}>
-                  <h3 style={{ fontSize: "1rem", margin: "0 0 0.75rem 0", color: "#f59e0b" }}>
+                  <h3 style={{ fontSize: "1rem", margin: "0 0 0.75rem 0", color: "#b45309" }}>
                     Pending Invitations ({pendingInvitations.length})
                   </h3>
                   <div className="table-container" style={{ margin: 0 }}>
@@ -381,10 +385,10 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                       <tbody>
                         {pendingInvitations.map((inv: any) => (
                           <tr key={inv.id}>
-                            <td style={{ color: "#ffffff" }}>{inv.email}</td>
+                            <td style={{ color: "var(--sorget-dark, #3A313C)", fontWeight: 500 }}>{inv.email}</td>
                             <td style={{ textTransform: "capitalize" }}>{inv.role}</td>
                             <td>
-                              <span style={{ color: "#f59e0b", fontSize: "0.8125rem" }}>
+                              <span style={{ color: "#b45309", fontSize: "0.8125rem", fontWeight: 500 }}>
                                 Pending acceptance
                               </span>
                             </td>
@@ -397,9 +401,10 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                                   style={{
                                     background: "none",
                                     border: "none",
-                                    color: "#f87171",
+                                    color: "#dc2626",
                                     fontSize: "0.8125rem",
                                     cursor: "pointer",
+                                    fontWeight: 500,
                                   }}
                                 >
                                   Revoke
@@ -425,29 +430,31 @@ export default async function SettingsPage({ searchParams }: PageProps) {
               style={{
                 maxWidth: "100%",
                 padding: "1.75rem",
-                background: "var(--color-card, #1a1a26)",
-                border: "1px solid var(--color-border, rgba(255,255,255,0.08))",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
                 borderRadius: "14px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
                 <div>
-                  <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#6c63ff", fontWeight: 700 }}>
+                  <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "var(--sorget-pink, #BB0C68)", fontWeight: 700, letterSpacing: "0.05em" }}>
                     CURRENT SUBSCRIPTION
                   </span>
-                  <h2 style={{ fontSize: "1.5rem", margin: "0.25rem 0", color: "#ffffff" }}>
+                  <h2 style={{ fontSize: "1.5rem", margin: "0.25rem 0", color: "var(--sorget-dark, #3A313C)" }}>
                     {currentPlan.name} Plan
                   </h2>
-                  <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", margin: 0 }}>
-                    ${currentPlan.priceMonthlyUsd} / month · Status: <span style={{ color: "#3ecf8e", textTransform: "capitalize" }}>{subscription?.status || "Active"}</span>
+                  <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.875rem", margin: 0 }}>
+                    ${currentPlan.priceMonthlyUsd} / month · Status: <span style={{ color: "#059669", textTransform: "capitalize", fontWeight: 600 }}>{subscription?.status || "Active"}</span>
                   </p>
                 </div>
                 <span
                   style={{
                     padding: "0.3rem 0.75rem",
                     borderRadius: "999px",
-                    background: "rgba(62, 207, 142, 0.15)",
-                    color: "#3ecf8e",
+                    background: "#ecfdf5",
+                    color: "#059669",
+                    border: "1px solid #a7f3d0",
                     fontSize: "0.8125rem",
                     fontWeight: 600,
                   }}
@@ -463,30 +470,30 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                   gap: "1rem",
                   marginTop: "1.5rem",
                   paddingTop: "1.5rem",
-                  borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderTop: "1px solid #e2e8f0",
                 }}
               >
                 <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>
+                  <div style={{ fontSize: "0.75rem", color: "var(--sorget-grey, #64748b)", textTransform: "uppercase", fontWeight: 600 }}>
                     Websites Allowed
                   </div>
-                  <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#ffffff", marginTop: "0.25rem" }}>
+                  <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--sorget-dark, #3A313C)", marginTop: "0.25rem" }}>
                     {currentPlan.websiteLimit === Infinity ? "Unlimited" : currentPlan.websiteLimit}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>
+                  <div style={{ fontSize: "0.75rem", color: "var(--sorget-grey, #64748b)", textTransform: "uppercase", fontWeight: 600 }}>
                     Monthly Leads Included
                   </div>
-                  <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#ffffff", marginTop: "0.25rem" }}>
+                  <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--sorget-dark, #3A313C)", marginTop: "0.25rem" }}>
                     {currentPlan.leadsMonthlyLimit.toLocaleString()}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>
+                  <div style={{ fontSize: "0.75rem", color: "var(--sorget-grey, #64748b)", textTransform: "uppercase", fontWeight: 600 }}>
                     CRM Integrations
                   </div>
-                  <div style={{ fontSize: "1.25rem", fontWeight: 700, color: currentPlan.crmIntegrations ? "#3ecf8e" : "#94a3b8", marginTop: "0.25rem" }}>
+                  <div style={{ fontSize: "1.25rem", fontWeight: 700, color: currentPlan.crmIntegrations ? "#059669" : "var(--sorget-grey, #64748b)", marginTop: "0.25rem" }}>
                     {currentPlan.crmIntegrations ? "Enabled" : "Upgrade Required"}
                   </div>
                 </div>
