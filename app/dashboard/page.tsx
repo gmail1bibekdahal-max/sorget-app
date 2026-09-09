@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { createProject } from "@/app/actions/projects";
 import CopyButton from "@/app/components/CopyButton";
 import MainNavigation from "@/app/components/MainNavigation";
+import styles from "./Page.module.css";
 
 export const metadata = {
   title: "Websites — Sorget",
@@ -62,17 +62,9 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
   const selectedWsId = params.workspace;
 
   const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) redirect("/login");
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    redirect("/login");
-  }
-
-  // Fetch workspaces for this user
   const { data: memberRows } = await supabase
     .from("workspace_members")
     .select("role, workspaces(id, name, slug)")
@@ -80,20 +72,13 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
 
   const userWorkspaces = (memberRows ?? [])
     .filter((r: any) => r.workspaces)
-    .map((r: any) => ({
-      id: r.workspaces.id,
-      name: r.workspaces.name,
-      slug: r.workspaces.slug,
-      role: r.role,
-    }));
+    .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
 
-  // Fetch projects (websites)
   const { data: projects, error: projectsError } = await supabase
     .from("projects")
     .select("id, name, website, tracking_id, created_at")
     .order("created_at", { ascending: false });
 
-  // Fetch recent leads strictly as a verification log
   const { data: leads, error: leadsError } = await supabase
     .from("leads")
     .select("id, name, email, channel, source, medium, gclid, created_at, project_id")
@@ -107,302 +92,163 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
 
   const leadList: Lead[] = leads ?? [];
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const scriptSrc = siteUrl ? `${siteUrl}/attributer.js` : "/attributer.js";
+
+  const totalLeads = leadList.length;
+  const activeProjects = projectList.filter((p) => (p.lead_count ?? 0) > 0).length;
+  const channels = [...new Set(leadList.map((l) => l.channel).filter(Boolean))].length;
+
   return (
-    <div className="dashboard-layout">
-      <MainNavigation
-        userEmail={user.email}
-        workspaces={userWorkspaces}
-        activeWorkspaceId={selectedWsId}
-      />
+    <div className={styles.layout}>
+      <MainNavigation userEmail={user.email} workspaces={userWorkspaces} activeWorkspaceId={selectedWsId} />
 
-      <main className="dashboard-main">
-        {/* Banners */}
-        {errorMsg && <div className="alert alert-error"><span>⚠️</span><span>{errorMsg}</span></div>}
-        {successMsg && <div className="alert alert-success"><span>✓</span><span>{successMsg}</span></div>}
-        {projectsError && (
-          <div className="alert alert-error">
-            <span>⚠️</span>
-            <span>Failed to load websites: {projectsError.message}</span>
-          </div>
-        )}
-        {leadsError && (
-          <div className="alert alert-error">
-            <span>⚠️</span>
-            <span>Failed to load verification log: {leadsError.message}</span>
-          </div>
-        )}
+      <main className={styles.main}>
+        {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
+        {successMsg && <div className={styles.alertSuccess}><span>✓</span><span>{successMsg}</span></div>}
+        {projectsError && <div className={styles.alertError}><span>⚠️</span><span>Failed to load websites: {projectsError.message}</span></div>}
+        {leadsError && <div className={styles.alertError}><span>⚠️</span><span>Failed to load submissions: {leadsError.message}</span></div>}
 
-        {/* Section Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.75rem" }}>
+        <div className={styles.pageHeaderRow}>
           <div>
-            <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "var(--sorget-dark, #3A313C)", margin: "0 0 0.35rem 0" }}>
-              Websites
-            </h1>
-            <p style={{ color: "var(--text-muted, #64748b)", margin: 0, fontSize: "0.95rem" }}>
-              Tracked domains where Sorget captures visitor attribution.
-            </p>
+            <h1 className={styles.pageTitle}>Websites</h1>
+            <p className={styles.pageSubtitle}>Track attribution across your domains.</p>
           </div>
-          <Link
-            href="/dashboard/projects/new"
-            className="btn btn-primary btn-sm"
-            id="new-project-btn"
-            style={{ textDecoration: "none", padding: "0.55rem 1.15rem", borderRadius: "8px" }}
-          >
-            + Add Website
-          </Link>
+          <Link href="/dashboard/projects/new" className={styles.btnPrimary}>+ Add Website</Link>
         </div>
 
-        {/* Quick Add Website Card */}
-        <div
-          className="card"
-          style={{
-            maxWidth: "100%",
-            marginBottom: "2.5rem",
-            padding: "1.5rem 1.75rem",
-            background: "#ffffff",
-            border: "1.5px solid var(--color-border, #e2e8f0)",
-            borderRadius: "14px",
-            boxShadow: "var(--shadow-sm)",
-          }}
-        >
-          <h2 style={{ fontSize: "1.05rem", fontWeight: 700, marginBottom: "0.85rem", color: "var(--sorget-dark, #3A313C)" }}>
-            Quick Add Website
-          </h2>
-          <form
-            action={createProject}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: "1rem",
-              alignItems: "end",
-            }}
-          >
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label htmlFor="proj-name" style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Website Name *</label>
-              <input
-                id="proj-name"
-                name="name"
-                type="text"
-                placeholder="e.g. Acme Marketing"
-                required
-              />
-            </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label htmlFor="proj-website" style={{ fontSize: "0.8125rem", fontWeight: 600 }}>Website URL (optional)</label>
-              <input
-                id="proj-website"
-                name="website"
-                type="text"
-                placeholder="https://example.com"
-              />
-            </div>
-            <button
-              id="create-project-submit"
-              type="submit"
-              className="btn btn-primary"
-              style={{ height: "42px", borderRadius: "8px" }}
-            >
-              Add Website
-            </button>
-          </form>
+        {/* Stat Cards */}
+        <div className={styles.statGrid}>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>Tracked Websites</p>
+            <p className={styles.statValue}>{projectList.length}</p>
+          </div>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>Submissions Captured</p>
+            <p className={styles.statValue}>{totalLeads}</p>
+          </div>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>Channels Detected</p>
+            <p className={styles.statValue}>{channels}</p>
+          </div>
         </div>
 
-        {/* Websites List */}
-        {projectList.length === 0 ? (
-          <div className="empty-state" style={{ padding: "3.5rem 1.5rem", textAlign: "center", marginBottom: "3rem" }}>
-            <div className="empty-state-icon" style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🌐</div>
-            <h3 style={{ fontSize: "1.25rem", margin: "0 0 0.5rem 0", color: "var(--sorget-dark, #3A313C)", fontWeight: 700 }}>
-              No websites tracked yet
-            </h3>
-            <p className="text-muted" style={{ fontSize: "0.9rem", maxWidth: "440px", margin: "0 auto 1.5rem auto" }}>
-              Add your first website above, or launch the Getting Started guide for step-by-step installation instructions.
-            </p>
-            <Link
-              href="/dashboard/getting-started"
-              className="btn btn-primary btn-sm"
-              style={{ textDecoration: "none", padding: "0.6rem 1.25rem", display: "inline-flex" }}
-            >
-              🚀 Launch Getting Started Guide →
-            </Link>
-          </div>
-        ) : (
-          <div className="projects-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.25rem", marginBottom: "3rem" }}>
-            {projectList.map((project) => {
-              const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-              const scriptSrc = siteUrl ? `${siteUrl}/attributer.js` : "/attributer.js";
-              const snippet = `<script src="${scriptSrc}" data-tracking-id="${project.tracking_id}"></script>`;
+        <div className={styles.cards}>
+          {/* Websites Table */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h2 className={styles.cardTitle}>Your Websites</h2>
+              {projectList.length > 0 && <span className={styles.muted}>{projectList.length} {projectList.length === 1 ? "site" : "sites"}</span>}
+            </div>
 
-              return (
-                <div
-                  key={project.id}
-                  className="project-card"
-                  style={{
-                    background: "#ffffff",
-                    border: "1.5px solid var(--color-border, #e2e8f0)",
-                    borderRadius: "14px",
-                    padding: "1.35rem 1.5rem",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    boxShadow: "var(--shadow-sm)",
-                  }}
-                >
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
-                      <div>
-                        <div className="project-name" style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--sorget-dark, #3A313C)" }}>
-                          {project.name}
-                        </div>
-                        {project.website && (
-                          <div className="project-meta" style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-                            {project.website}
-                          </div>
-                        )}
-                      </div>
-                      <span
-                        className="project-tracking-id"
-                        style={{
-                          fontSize: "0.75rem",
-                          fontFamily: "'SF Mono', Consolas, monospace",
-                          background: "var(--sorget-pink-light, rgba(187, 12, 104, 0.08))",
-                          color: "var(--sorget-pink, #BB0C68)",
-                          border: "1px solid var(--sorget-pink-border, rgba(187, 12, 104, 0.25))",
-                          padding: "0.2rem 0.5rem",
-                          borderRadius: "6px",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {project.tracking_id}
-                      </span>
-                    </div>
-
-                    {/* Script Snippet Box */}
-                    <div
-                      style={{
-                        marginTop: "0.85rem",
-                        background: "#f8fafc",
-                        border: "1px solid var(--color-border, #e2e8f0)",
-                        borderRadius: "8px",
-                        padding: "0.5rem 0.75rem",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <code
-                        style={{
-                          fontSize: "0.725rem",
-                          fontFamily: "'SF Mono', Consolas, monospace",
-                          color: "#475569",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          marginRight: "0.5rem",
-                        }}
-                      >
-                        {snippet}
-                      </code>
-                      <CopyButton text={snippet} label="Copy" />
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginTop: "1.25rem",
-                      paddingTop: "0.75rem",
-                      borderTop: "1px solid #f1f5f9",
-                    }}
-                  >
-                    <div>
-                      <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary, #475569)" }}>
-                        {project.lead_count} {project.lead_count === 1 ? "submission" : "submissions"}
-                      </span>
-                    </div>
-                    <Link
-                      href={`/dashboard/projects/${project.id}`}
-                      className="btn btn-secondary btn-sm"
-                      id={`view-project-${project.id}`}
-                      style={{ textDecoration: "none", fontSize: "0.8125rem", padding: "0.35rem 0.75rem", borderRadius: "6px" }}
-                    >
-                      Configure &amp; Log →
-                    </Link>
-                  </div>
+            {projectList.length === 0 ? (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyStateIcon}>🌐</div>
+                <h3 className={styles.emptyStateTitle}>No websites tracked yet</h3>
+                <p className={styles.emptyStateText}>Add your first domain to generate a tracking snippet and start capturing visitor sources.</p>
+                <div className={styles.row} style={{ justifyContent: "center" }}>
+                  <Link href="/dashboard/projects/new" className={styles.btnPrimary}>Add Website</Link>
+                  <Link href="/dashboard/getting-started" className={styles.btnSecondary}>Setup Guide</Link>
                 </div>
-              );
-            })}
+              </div>
+            ) : (
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: "28%" }}>Website</th>
+                      <th style={{ width: "32%" }}>Tracking Snippet</th>
+                      <th style={{ width: "18%" }}>Status</th>
+                      <th style={{ width: "22%", textAlign: "right" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projectList.map((project) => {
+                      const snippet = `<script src="${scriptSrc}" data-tracking-id="${project.tracking_id}"></script>`;
+                      const hasSubmissions = (project.lead_count ?? 0) > 0;
+                      return (
+                        <tr key={project.id}>
+                          <td>
+                            <div style={{ fontWeight: 600, color: "#3A313C" }}>{project.name}</div>
+                            <div style={{ fontSize: "0.75rem", color: "#717680", marginTop: "2px" }}>{project.website ?? "All domains"}</div>
+                          </td>
+                          <td>
+                            <div className={styles.row}>
+                              <span className={styles.trackingId} title={project.tracking_id}>{project.tracking_id}</span>
+                              <CopyButton text={snippet} label="Copy" id={`copy-${project.id}`} />
+                            </div>
+                          </td>
+                          <td>
+                            {hasSubmissions ? (
+                              <span className={styles.badgeDone}>✓ {project.lead_count} {project.lead_count === 1 ? "lead" : "leads"}</span>
+                            ) : (
+                              <span className={styles.badgePending}>Awaiting traffic</span>
+                            )}
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            <Link href={`/dashboard/projects/${project.id}`} className={`${styles.btnSecondary} ${styles.btnSmall}`}>Configure</Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
 
-        {/* Recent Submissions Verification Log */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-          <div>
-            <h2 style={{ fontSize: "1.3rem", fontWeight: 700, margin: 0, color: "var(--sorget-dark, #3A313C)" }}>
-              Recent Submissions (Verification Log)
-            </h2>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: "0.25rem 0 0 0" }}>
-              Inspection log showing the last 50 captured submissions with full attribution parameters.
-            </p>
+          {/* Recent Submissions */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div>
+                <h2 className={styles.cardTitle}>Recent Submissions</h2>
+                <p className={styles.cardSubtitle} style={{ marginBottom: 0 }}>Last 50 captured submissions with attribution data.</p>
+              </div>
+              {leadList.length > 0 && <span className={styles.muted}>{leadList.length} entries</span>}
+            </div>
+
+            {leadList.length === 0 ? (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyStateIcon}>📋</div>
+                <h3 className={styles.emptyStateTitle}>No submissions yet</h3>
+                <p className={styles.emptyStateText}>Submissions appear here once your forms include hidden attribution fields and visitors submit them.</p>
+              </div>
+            ) : (
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Channel</th>
+                      <th>Source</th>
+                      <th>Medium</th>
+                      <th>GCLID</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leadList.map((lead) => (
+                      <tr key={lead.id}>
+                        <td style={{ fontWeight: 500 }}>{lead.name ?? "—"}</td>
+                        <td style={{ color: "#717680" }}>{lead.email ?? "—"}</td>
+                        <td><span className={channelBadgeClass(lead.channel)}>{lead.channel ?? "—"}</span></td>
+                        <td>{lead.source ?? "—"}</td>
+                        <td>{lead.medium ?? "—"}</td>
+                        <td>
+                          {lead.gclid ? (
+                            <code style={{ fontSize: "0.75rem", color: "#717680" }}>{lead.gclid.slice(0, 14)}…</code>
+                          ) : "—"}
+                        </td>
+                        <td style={{ whiteSpace: "nowrap", fontSize: "0.75rem", color: "#717680" }}>{formatDate(lead.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
-
-        {leadList.length === 0 ? (
-          <div className="empty-state" style={{ padding: "3rem 1rem", textAlign: "center" }}>
-            <div className="empty-state-icon" style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🎯</div>
-            <p style={{ color: "var(--sorget-dark, #3A313C)", margin: 0, fontSize: "0.95rem", fontWeight: 600 }}>
-              No submissions recorded yet.
-            </p>
-            <p className="text-muted" style={{ marginTop: "0.25rem", fontSize: "0.85rem" }}>
-              Submissions appear here automatically once your website forms include the hidden fields and visitors convert.
-            </p>
-          </div>
-        ) : (
-          <div className="table-container">
-            <table className="leads-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Channel</th>
-                  <th>Source</th>
-                  <th>Medium</th>
-                  <th>GCLID</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leadList.map((lead) => (
-                  <tr key={lead.id}>
-                    <td style={{ fontWeight: 600, color: "var(--sorget-dark, #3A313C)" }}>{lead.name ?? "—"}</td>
-                    <td style={{ color: "var(--text-secondary)" }}>{lead.email ?? "—"}</td>
-                    <td>
-                      <span className={channelBadgeClass(lead.channel)}>
-                        {lead.channel ?? "—"}
-                      </span>
-                    </td>
-                    <td>{lead.source ?? "—"}</td>
-                    <td>{lead.medium ?? "—"}</td>
-                    <td
-                      style={{
-                        fontFamily: "'SF Mono', Consolas, monospace",
-                        fontSize: "0.75rem",
-                        color: "var(--sorget-pink, #BB0C68)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {lead.gclid ? lead.gclid.slice(0, 16) + "…" : "—"}
-                    </td>
-                    <td style={{ whiteSpace: "nowrap", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-                      {formatDate(lead.created_at)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </main>
     </div>
   );

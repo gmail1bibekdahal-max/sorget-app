@@ -5,6 +5,7 @@ import { updateWorkspace, deleteWorkspace } from "@/app/actions/workspaces";
 import { inviteTeamMember, removeMember, revokeInvitation } from "@/app/actions/team";
 import { PLANS } from "@/lib/billing";
 import MainNavigation from "@/app/components/MainNavigation";
+import styles from "../Page.module.css";
 
 export const metadata = {
   title: "Settings — Sorget",
@@ -12,13 +13,7 @@ export const metadata = {
 };
 
 interface PageProps {
-  searchParams: Promise<{
-    tab?: string;
-    workspace?: string;
-    success?: string;
-    error?: string;
-    notice?: string;
-  }>;
+  searchParams: Promise<{ tab?: string; workspace?: string; success?: string; error?: string; notice?: string }>;
 }
 
 export default async function SettingsPage({ searchParams }: PageProps) {
@@ -30,16 +25,9 @@ export default async function SettingsPage({ searchParams }: PageProps) {
   const noticeMsg = params.notice;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) redirect("/login");
 
-  if (userError || !user) {
-    redirect("/login");
-  }
-
-  // Fetch workspaces for this user
   const { data: memberRows } = await supabase
     .from("workspace_members")
     .select("role, workspaces(id, name, slug, created_at)")
@@ -47,36 +35,23 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
   const userWorkspaces = (memberRows ?? [])
     .filter((r: any) => r.workspaces)
-    .map((r: any) => ({
-      id: r.workspaces.id,
-      name: r.workspaces.name,
-      slug: r.workspaces.slug,
-      role: r.role,
-    }));
+    .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
 
   const activeWs =
     userWorkspaces.find((w) => w.id === selectedWsId) ||
-    userWorkspaces[0] || {
-      id: "default",
-      name: "Personal Workspace",
-      slug: "personal",
-      role: "owner",
-    };
+    userWorkspaces[0] || { id: "default", name: "Personal Workspace", slug: "personal", role: "owner" };
 
-  // Fetch members of active workspace
   const { data: currentMembers } = await supabase
     .from("workspace_members")
     .select("id, user_id, role, created_at")
     .eq("workspace_id", activeWs.id);
 
-  // Fetch pending invitations
   const { data: pendingInvitations } = await supabase
     .from("workspace_invitations")
     .select("id, email, role, status, token, expires_at, created_at")
     .eq("workspace_id", activeWs.id)
     .eq("status", "pending");
 
-  // Fetch subscription
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select("*")
@@ -93,49 +68,25 @@ export default async function SettingsPage({ searchParams }: PageProps) {
   ];
 
   return (
-    <div className="dashboard-layout">
-      <MainNavigation
-        userEmail={user.email}
-        workspaces={userWorkspaces}
-        activeWorkspaceId={activeWs.id}
-      />
+    <div className={styles.layout}>
+      <MainNavigation userEmail={user.email} workspaces={userWorkspaces} activeWorkspaceId={activeWs.id} />
 
-      <main className="dashboard-main" style={{ maxWidth: "1000px" }}>
-        {/* Alerts */}
-        {successMsg && (
-          <div className="alert alert-success" style={{ marginBottom: "1.5rem" }}>
-            ✓ {successMsg}
-          </div>
-        )}
-        {errorMsg && (
-          <div className="alert alert-error" style={{ marginBottom: "1.5rem" }}>
-            ✗ {errorMsg}
-          </div>
-        )}
-        {noticeMsg && (
-          <div className="alert alert-info" style={{ marginBottom: "1.5rem" }}>
-            ℹ {noticeMsg}
-          </div>
-        )}
+      <main className={styles.main}>
+        {successMsg && <div className={styles.alertSuccess}><span>✓</span><span>{successMsg}</span></div>}
+        {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
+        {noticeMsg && <div className={styles.alertInfo}><span>ℹ</span><span>{noticeMsg}</span></div>}
 
-        {/* Page Header */}
-        <div style={{ marginBottom: "2rem" }}>
-          <h1 style={{ fontSize: "1.875rem", fontWeight: 700, margin: "0 0 0.5rem 0", color: "var(--sorget-dark, #3A313C)" }}>
-            Settings
-          </h1>
-          <p style={{ color: "var(--sorget-grey, #64748b)", margin: 0, fontSize: "0.95rem" }}>
-            Manage your workspace details, team access, and subscription plan.
-          </p>
+        <div className={styles.pageHeader}>
+          <h1 className={styles.pageTitle}>Settings</h1>
+          <p className={styles.pageSubtitle}>Manage your workspace configuration, team access, and subscription plan.</p>
         </div>
 
-        {/* Settings Navigation Tabs */}
-        <div className="tabs" style={{ marginBottom: "2rem" }}>
+        <div className={styles.tabs}>
           {tabs.map((t) => (
             <Link
               key={t.key}
               href={`/dashboard/settings?tab=${t.key}${activeWs.id ? `&workspace=${activeWs.id}` : ""}`}
-              className={`tab-btn ${activeTab === t.key ? "tab-btn-active" : ""}`}
-              id={`settings-tab-${t.key}`}
+              className={`${styles.tab} ${activeTab === t.key ? styles.tabActive : ""}`}
             >
               {t.label}
             </Link>
@@ -144,77 +95,30 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
         {/* TAB 1: WORKSPACE */}
         {activeTab === "workspace" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-            <div
-              className="card"
-              style={{
-                maxWidth: "100%",
-                padding: "1.75rem",
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "14px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              }}
-            >
-              <h2 style={{ fontSize: "1.2rem", margin: "0 0 1.25rem 0", color: "var(--sorget-dark, #3A313C)" }}>
-                Workspace Details
-              </h2>
-              <form action={updateWorkspace} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <div className={styles.cards}>
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle} style={{ marginBottom: "1.25rem" }}>Workspace Details</h2>
+              <form action={updateWorkspace} style={{ display: "flex", flexDirection: "column", gap: "1rem", maxWidth: "480px" }}>
                 <input type="hidden" name="workspaceId" value={activeWs.id} />
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="ws-name">Workspace Name</label>
-                  <input
-                    id="ws-name"
-                    name="name"
-                    type="text"
-                    defaultValue={activeWs.name}
-                    required
-                  />
+                <div className={styles.formGroup}>
+                  <label className={styles.inputLabel} htmlFor="ws-name">Workspace Name</label>
+                  <input id="ws-name" name="name" type="text" defaultValue={activeWs.name} required className={styles.input} />
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="ws-slug">Workspace Identifier (Slug)</label>
-                  <input
-                    id="ws-slug"
-                    type="text"
-                    defaultValue={activeWs.slug}
-                    disabled
-                    style={{ opacity: 0.6, cursor: "not-allowed" }}
-                  />
+                <div className={styles.formGroup}>
+                  <label className={styles.inputLabel} htmlFor="ws-slug">Workspace Identifier</label>
+                  <input id="ws-slug" type="text" defaultValue={activeWs.slug} disabled className={styles.input} style={{ background: "#f3f4f6", cursor: "not-allowed" }} />
                 </div>
-                <div>
-                  <button type="submit" className="btn btn-primary btn-sm">
-                    Save Changes
-                  </button>
-                </div>
+                <button type="submit" className={styles.btnPrimary} style={{ alignSelf: "flex-start" }}>Save Changes</button>
               </form>
             </div>
 
-            {/* Danger Zone */}
             {activeWs.role === "owner" && activeWs.id !== "default" && (
-              <div
-                className="card"
-                style={{
-                  maxWidth: "100%",
-                  padding: "1.75rem",
-                  background: "#fff1f2",
-                  border: "1px solid #fecdd3",
-                  borderRadius: "14px",
-                }}
-              >
-                <h3 style={{ fontSize: "1.1rem", color: "#e11d48", margin: "0 0 0.5rem 0" }}>
-                  Delete Workspace
-                </h3>
-                <p style={{ color: "#475569", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
-                  Permanently delete this workspace and remove all associated website connections and team members.
-                </p>
+              <div className={styles.dangerZone}>
+                <h3 className={styles.dangerTitle}>Delete Workspace</h3>
+                <p className={styles.dangerText}>Permanently delete this workspace and remove all associated website connections and team members.</p>
                 <form action={deleteWorkspace}>
                   <input type="hidden" name="workspaceId" value={activeWs.id} />
-                  <button
-                    type="submit"
-                    className="btn btn-danger btn-sm"
-                  >
-                    Delete Workspace
-                  </button>
+                  <button type="submit" className={styles.btnDanger}>Delete Workspace</button>
                 </form>
               </div>
             )}
@@ -223,94 +127,37 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
         {/* TAB 2: TEAM MEMBERS */}
         {activeTab === "team" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-            {/* Invite Form */}
-            <div
-              className="card"
-              style={{
-                maxWidth: "100%",
-                padding: "1.75rem",
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "14px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              }}
-            >
-              <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.5rem 0", color: "var(--sorget-dark, #3A313C)" }}>
-                Invite Team Member
-              </h2>
-              <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
-                Give colleagues access to install tracking scripts, view submission verification logs, and manage integrations.
-              </p>
-              <form
-                action={inviteTeamMember}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 140px auto",
-                  gap: "1rem",
-                  alignItems: "end",
-                }}
-              >
+          <div className={styles.cards}>
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle} style={{ marginBottom: "0.35rem" }}>Invite Team Member</h2>
+              <p className={styles.cardSubtitle}>Colleagues receive access to manage website tracking and review attribution logs.</p>
+              <form action={inviteTeamMember} className={styles.row} style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
                 <input type="hidden" name="workspace_id" value={activeWs.id} />
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="invite-email" style={{ fontSize: "0.8125rem" }}>Email Address</label>
-                  <input
-                    id="invite-email"
-                    name="email"
-                    type="email"
-                    placeholder="colleague@company.com"
-                    required
-                  />
+                <div className={styles.formGroup} style={{ flex: "1 1 220px", marginBottom: 0 }}>
+                  <label className={styles.inputLabel} htmlFor="invite-email">Email Address</label>
+                  <input id="invite-email" name="email" type="email" placeholder="colleague@company.com" required className={styles.input} />
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="invite-role" style={{ fontSize: "0.8125rem" }}>Role</label>
-                  <select
-                    id="invite-role"
-                    name="role"
-                    defaultValue="member"
-                    style={{
-                      background: "#ffffff",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: "6px",
-                      padding: "0.55rem 0.75rem",
-                      color: "var(--sorget-dark, #3A313C)",
-                      fontSize: "0.875rem",
-                      width: "100%",
-                    }}
-                  >
+                <div className={styles.formGroup} style={{ width: "140px", marginBottom: 0 }}>
+                  <label className={styles.inputLabel} htmlFor="invite-role">Role</label>
+                  <select id="invite-role" name="role" defaultValue="member" className={styles.input}>
                     <option value="admin">Admin</option>
                     <option value="member">Member</option>
                     <option value="viewer">Viewer</option>
                   </select>
                 </div>
-                <button type="submit" className="btn btn-primary" style={{ height: "42px" }}>
-                  Send Invite
-                </button>
+                <button type="submit" className={styles.btnPrimary}>Send Invite</button>
               </form>
             </div>
 
-            {/* Current Members */}
-            <div
-              className="card"
-              style={{
-                maxWidth: "100%",
-                padding: "1.75rem",
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "14px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              }}
-            >
-              <h2 style={{ fontSize: "1.2rem", margin: "0 0 1rem 0", color: "var(--sorget-dark, #3A313C)" }}>
-                Active Members ({currentMembers?.length ?? 1})
-              </h2>
-              <div className="table-container" style={{ margin: 0 }}>
-                <table className="leads-table">
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle} style={{ marginBottom: "1rem" }}>Active Members ({currentMembers?.length ?? 1})</h2>
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
                   <thead>
                     <tr>
-                      <th>User</th>
-                      <th>Role</th>
-                      <th style={{ textAlign: "right" }}>Actions</th>
+                      <th style={{ width: "60%" }}>User</th>
+                      <th style={{ width: "25%" }}>Role</th>
+                      <th style={{ width: "15%", textAlign: "right" }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -318,44 +165,14 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                       const isSelf = m.user_id === user.id;
                       return (
                         <tr key={m.id}>
-                          <td>
-                            <div style={{ fontWeight: 500, color: "var(--sorget-dark, #3A313C)" }}>
-                              {isSelf ? `${user.email} (You)` : `User ${m.user_id.slice(0, 8)}…`}
-                            </div>
-                          </td>
-                          <td>
-                            <span
-                              style={{
-                                textTransform: "capitalize",
-                                padding: "0.2rem 0.5rem",
-                                borderRadius: "4px",
-                                fontSize: "0.75rem",
-                                fontWeight: 600,
-                                background: m.role === "owner" ? "rgba(187, 12, 104, 0.1)" : "#f1f5f9",
-                                color: m.role === "owner" ? "var(--sorget-pink, #BB0C68)" : "#475569",
-                              }}
-                            >
-                              {m.role}
-                            </span>
-                          </td>
+                          <td style={{ fontWeight: 500, color: "#3A313C" }}>{isSelf ? `${user.email} (You)` : `User ${m.user_id.slice(0, 8)}…`}</td>
+                          <td><span className={styles.badgeOther} style={{ textTransform: "capitalize" }}>{m.role}</span></td>
                           <td style={{ textAlign: "right" }}>
                             {!isSelf && activeWs.role === "owner" && (
                               <form action={removeMember} style={{ display: "inline" }}>
                                 <input type="hidden" name="workspace_id" value={activeWs.id} />
                                 <input type="hidden" name="member_id" value={m.id} />
-                                <button
-                                  type="submit"
-                                  style={{
-                                    background: "none",
-                                    border: "none",
-                                    color: "#dc2626",
-                                    fontSize: "0.8125rem",
-                                    cursor: "pointer",
-                                    fontWeight: 500,
-                                  }}
-                                >
-                                  Remove
-                                </button>
+                                <button type="submit" className={styles.btnDanger}>Remove</button>
                               </form>
                             )}
                           </td>
@@ -365,143 +182,76 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                   </tbody>
                 </table>
               </div>
+            </div>
 
-              {/* Pending Invitations */}
-              {pendingInvitations && pendingInvitations.length > 0 && (
-                <div style={{ marginTop: "2rem" }}>
-                  <h3 style={{ fontSize: "1rem", margin: "0 0 0.75rem 0", color: "#b45309" }}>
-                    Pending Invitations ({pendingInvitations.length})
-                  </h3>
-                  <div className="table-container" style={{ margin: 0 }}>
-                    <table className="leads-table">
-                      <thead>
-                        <tr>
-                          <th>Invited Email</th>
-                          <th>Role</th>
-                          <th>Status</th>
-                          <th style={{ textAlign: "right" }}>Action</th>
+            {pendingInvitations && pendingInvitations.length > 0 && (
+              <div className={styles.card}>
+                <h2 className={styles.cardTitle} style={{ marginBottom: "1rem", color: "#92400e" }}>Pending Invitations ({pendingInvitations.length})</h2>
+                <div className={styles.tableWrap}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>Invited Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th style={{ textAlign: "right" }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingInvitations.map((inv: any) => (
+                        <tr key={inv.id}>
+                          <td style={{ fontWeight: 500 }}>{inv.email}</td>
+                          <td style={{ textTransform: "capitalize" }}>{inv.role}</td>
+                          <td><span className="badge badge-referral">Pending</span></td>
+                          <td style={{ textAlign: "right" }}>
+                            <form action={revokeInvitation} style={{ display: "inline" }}>
+                              <input type="hidden" name="invitation_id" value={inv.id} />
+                              <input type="hidden" name="workspace_id" value={activeWs.id} />
+                              <button type="submit" className={styles.btnDanger}>Revoke</button>
+                            </form>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {pendingInvitations.map((inv: any) => (
-                          <tr key={inv.id}>
-                            <td style={{ color: "var(--sorget-dark, #3A313C)", fontWeight: 500 }}>{inv.email}</td>
-                            <td style={{ textTransform: "capitalize" }}>{inv.role}</td>
-                            <td>
-                              <span style={{ color: "#b45309", fontSize: "0.8125rem", fontWeight: 500 }}>
-                                Pending acceptance
-                              </span>
-                            </td>
-                            <td style={{ textAlign: "right" }}>
-                              <form action={revokeInvitation} style={{ display: "inline" }}>
-                                <input type="hidden" name="invitation_id" value={inv.id} />
-                                <input type="hidden" name="workspace_id" value={activeWs.id} />
-                                <button
-                                  type="submit"
-                                  style={{
-                                    background: "none",
-                                    border: "none",
-                                    color: "#dc2626",
-                                    fontSize: "0.8125rem",
-                                    cursor: "pointer",
-                                    fontWeight: 500,
-                                  }}
-                                >
-                                  Revoke
-                                </button>
-                              </form>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* TAB 3: SUBSCRIPTION & BILLING */}
+        {/* TAB 3: SUBSCRIPTION */}
         {activeTab === "billing" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-            <div
-              className="card"
-              style={{
-                maxWidth: "100%",
-                padding: "1.75rem",
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "14px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                <div>
-                  <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "var(--sorget-pink, #BB0C68)", fontWeight: 700, letterSpacing: "0.05em" }}>
-                    CURRENT SUBSCRIPTION
-                  </span>
-                  <h2 style={{ fontSize: "1.5rem", margin: "0.25rem 0", color: "var(--sorget-dark, #3A313C)" }}>
-                    {currentPlan.name} Plan
-                  </h2>
-                  <p style={{ color: "var(--sorget-grey, #64748b)", fontSize: "0.875rem", margin: 0 }}>
-                    ${currentPlan.priceMonthlyUsd} / month · Status: <span style={{ color: "#059669", textTransform: "capitalize", fontWeight: 600 }}>{subscription?.status || "Active"}</span>
-                  </p>
-                </div>
-                <span
-                  style={{
-                    padding: "0.3rem 0.75rem",
-                    borderRadius: "999px",
-                    background: "#ecfdf5",
-                    color: "#059669",
-                    border: "1px solid #a7f3d0",
-                    fontSize: "0.8125rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  ✓ Active
-                </span>
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div>
+                <p className={styles.muted} style={{ fontSize: "calc(.25rem * 3)", textTransform: "uppercase", color: "#BB0C68", fontWeight: 600, letterSpacing: "0.05em", marginBottom: "0.25rem" }}>Current Plan</p>
+                <h2 className={styles.cardTitle}>{currentPlan.name}</h2>
+                <p className={styles.muted} style={{ marginTop: "0.25rem" }}>
+                  ${currentPlan.priceMonthlyUsd} / month · Status: <span style={{ color: "#059669", fontWeight: 600 }}>{subscription?.status || "Active"}</span>
+                </p>
               </div>
+              <span className={styles.badgeDone}>Active</span>
+            </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                  gap: "1rem",
-                  marginTop: "1.5rem",
-                  paddingTop: "1.5rem",
-                  borderTop: "1px solid #e2e8f0",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--sorget-grey, #64748b)", textTransform: "uppercase", fontWeight: 600 }}>
-                    Websites Allowed
-                  </div>
-                  <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--sorget-dark, #3A313C)", marginTop: "0.25rem" }}>
-                    {currentPlan.websiteLimit === Infinity ? "Unlimited" : currentPlan.websiteLimit}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--sorget-grey, #64748b)", textTransform: "uppercase", fontWeight: 600 }}>
-                    Monthly Leads Included
-                  </div>
-                  <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--sorget-dark, #3A313C)", marginTop: "0.25rem" }}>
-                    {currentPlan.leadsMonthlyLimit.toLocaleString()}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--sorget-grey, #64748b)", textTransform: "uppercase", fontWeight: 600 }}>
-                    CRM Integrations
-                  </div>
-                  <div style={{ fontSize: "1.25rem", fontWeight: 700, color: currentPlan.crmIntegrations ? "#059669" : "var(--sorget-grey, #64748b)", marginTop: "0.25rem" }}>
-                    {currentPlan.crmIntegrations ? "Enabled" : "Upgrade Required"}
-                  </div>
-                </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem", paddingTop: "1.25rem", borderTop: "1px solid #e9eaeb" }}>
+              <div>
+                <p className={styles.muted} style={{ marginBottom: "0.2rem" }}>Websites Limit</p>
+                <p style={{ fontSize: "calc(.25rem * 5)", fontWeight: 700, color: "#3A313C" }}>
+                  {currentPlan.websiteLimit === Infinity ? "Unlimited" : currentPlan.websiteLimit}
+                </p>
+              </div>
+              <div>
+                <p className={styles.muted} style={{ marginBottom: "0.2rem" }}>Monthly Leads Limit</p>
+                <p style={{ fontSize: "calc(.25rem * 5)", fontWeight: 700, color: "#3A313C" }}>{currentPlan.leadsMonthlyLimit.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className={styles.muted} style={{ marginBottom: "0.2rem" }}>CRM Integrations</p>
+                <p style={{ fontSize: "calc(.25rem * 5)", fontWeight: 700, color: "#3A313C" }}>{currentPlan.crmIntegrations ? "Enabled" : "Upgrade Required"}</p>
               </div>
             </div>
           </div>
         )}
-
       </main>
     </div>
   );

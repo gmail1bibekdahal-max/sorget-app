@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { requestPasswordReset } from "@/app/actions/auth";
+import styles from "../Auth.module.css";
 
 interface PageProps {
   searchParams: Promise<{ error?: string; success?: string }>;
@@ -17,65 +18,58 @@ export default async function ForgotPasswordPage({ searchParams }: PageProps) {
   const success = params.success;
 
   return (
-    <div className="page">
-      <div className="card">
-        {/* Brand Logo */}
-        <a href="https://sorget.site/" className="logo" title="Back to Sorget">
-          <Image
-            src="/logo.png"
-            alt="Sorget Logo"
-            width={34}
-            height={34}
-            className="logo-img"
-            priority
-          />
+    <div className={styles.page}>
+      {/* Left: form */}
+      <div className={styles.formSide}>
+        <div className={styles.card}>
+          <a href="https://sorget.site/" className={styles.logo} title="Back to Sorget">
+            <Image src="/logo.png" alt="Sorget Logo" width={28} height={28} className={styles.logoImg} priority />
+            <span>Sorget</span>
+          </a>
+
+          <h1 className={styles.title}>Reset password</h1>
+          <p className={styles.subtitle}>Enter your email and we'll send you a secure link to reset your password.</p>
+
+          {error && <div className={styles.alertError} role="alert">{error}</div>}
+          {success && <div className={styles.alertSuccess} role="status"><span>✓</span><span>Password reset link sent! Please check your email inbox.</span></div>}
+
+          {!success && (
+            <form action={requestPasswordReset} id="forgot-form">
+              <div className={styles.formGroup} style={{ marginBottom: "1.5rem" }}>
+                <label className={styles.label} htmlFor="forgot-email">Email address</label>
+                <input id="forgot-email" name="email" type="email" placeholder="you@example.com" required autoComplete="email" className={styles.input} />
+              </div>
+              <button id="forgot-submit" type="submit" className={styles.btnPrimary}>Send Reset Link</button>
+            </form>
+          )}
+
+          <div className={styles.footer}>
+            Remember your password? <Link href="/login" id="back-login-link">Sign In</Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Right: brand panel */}
+      <div className={styles.brandSide}>
+        <a href="https://sorget.site/" className={styles.brandLogo}>
+          <Image src="/logo.png" alt="Sorget Logo" width={32} height={32} className={styles.brandLogoImg} priority />
           <span>Sorget</span>
         </a>
 
-        <h1>Reset password</h1>
-        <p style={{ marginBottom: "2rem", color: "var(--text-muted)" }}>
-          Enter your email address and we will send you a secure link to reset your password.
+        <h2 className={styles.brandHeadline}>Know where your leads come from.</h2>
+        <p className={styles.brandBody}>
+          Sorget captures the marketing journey behind every lead — from the first visit to the form submission.
         </p>
 
-        {error && (
-          <div className="alert alert-error" role="alert">
-            <span>⚠️</span>
-            <span>{error}</span>
-          </div>
-        )}
+        <div className={styles.brandDivider} />
 
-        {success && (
-          <div className="alert alert-success" role="status">
-            <span>✓</span>
-            <span>Password reset link sent! Please check your email inbox.</span>
-          </div>
-        )}
+        <p className={styles.brandTagline}>Capture. Attribute. Connect.</p>
+        <p className={styles.brandTaglineBody}>
+          Track sources, campaigns, landing pages, and first-touch attribution, then send the data where your team already works.
+        </p>
 
-        {!success && (
-          <form action={requestPasswordReset} id="forgot-form">
-            <div className="form-group" style={{ marginBottom: "1.75rem" }}>
-              <label htmlFor="forgot-email">Email address</label>
-              <input
-                id="forgot-email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                required
-                autoComplete="email"
-              />
-            </div>
-
-            <button id="forgot-submit" type="submit" className="btn btn-primary">
-              Send Reset Link
-            </button>
-          </form>
-        )}
-
-        <div className="auth-footer">
-          Remember your password?{" "}
-          <Link href="/login" id="back-login-link">
-            Sign In
-          </Link>
+        <div className={styles.brandFlow}>
+          Marketing &rarr; Leads &rarr; Revenue
         </div>
       </div>
     </div>

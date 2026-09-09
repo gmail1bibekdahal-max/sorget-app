@@ -5,6 +5,7 @@ import { buildHubSpotOAuthUrl, generateOAuthState } from "@/lib/crm";
 import { createWebhook, deleteWebhook } from "@/app/actions/webhooks";
 import { getOrCreateDefaultWorkspace } from "@/lib/workspaces";
 import MainNavigation from "@/app/components/MainNavigation";
+import styles from "../../../Page.module.css";
 
 interface PageProps {
   params: Promise<{ projectId: string }>;
@@ -21,11 +22,8 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
   const { success, error: errorMsg, notice } = await searchParams;
 
   const supabase = await createClient();
-
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
@@ -33,26 +31,14 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
     .eq("id", projectId)
     .single();
 
-  if (projectError || !project) {
-    redirect("/dashboard");
-  }
+  if (projectError || !project) redirect("/dashboard");
 
-  // Auto-heal workspace if project is missing workspace_id
   if (!project.workspace_id) {
-    const ws = await getOrCreateDefaultWorkspace(
-      supabase,
-      user.id,
-      user.email,
-      user.user_metadata?.full_name
-    );
-    await supabase
-      .from("projects")
-      .update({ workspace_id: ws.id })
-      .eq("id", project.id);
+    const ws = await getOrCreateDefaultWorkspace(supabase, user.id, user.email, user.user_metadata?.full_name);
+    await supabase.from("projects").update({ workspace_id: ws.id }).eq("id", project.id);
     project.workspace_id = ws.id;
   }
 
-  // Fetch workspaces for navigation
   const { data: memberRows } = await supabase
     .from("workspace_members")
     .select("role, workspaces(id, name, slug)")
@@ -60,21 +46,14 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
 
   const userWorkspaces = (memberRows ?? [])
     .filter((r: any) => r.workspaces)
-    .map((r: any) => ({
-      id: r.workspaces.id,
-      name: r.workspaces.name,
-      slug: r.workspaces.slug,
-      role: r.role,
-    }));
+    .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
 
-  // Fetch webhooks for this project
   const { data: webhooks } = await supabase
     .from("webhooks")
     .select("*")
     .eq("project_id", project.id)
     .order("created_at", { ascending: false });
 
-  // Fetch CRM connection status
   let hubspotConnection: { is_active: boolean; portal_id?: string | null; token_expires_at?: string | null; scopes?: string | null } | null = null;
   if (project.workspace_id) {
     const { data: crmConn } = await supabase
@@ -87,8 +66,6 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
   }
 
   const isHubSpotConnected = hubspotConnection?.is_active === true;
-
-  // Build HubSpot OAuth URL
   const clientId = (process.env.HUBSPOT_CLIENT_ID || "").trim();
   const isPatToken = clientId.startsWith("pat-");
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
@@ -101,232 +78,122 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
   }
 
   return (
-    <div className="dashboard-layout">
-      <MainNavigation
-        userEmail={user.email}
-        workspaces={userWorkspaces}
-        activeWorkspaceId={project.workspace_id || undefined}
-      />
+    <div className={styles.layout}>
+      <MainNavigation userEmail={user.email} workspaces={userWorkspaces} activeWorkspaceId={project.workspace_id || undefined} activeProjectName={project.name} activeProjectHref={`/dashboard/projects/${project.id}`} />
 
-      <main className="dashboard-main" style={{ maxWidth: "1050px" }}>
-        <div style={{ marginBottom: "1.5rem" }}>
-          <Link href={`/dashboard/projects/${project.id}`} style={{ color: "var(--sorget-pink, #BB0C68)", fontSize: "0.875rem", textDecoration: "none", fontWeight: 500 }}>
-            ← Back to {project.name}
-          </Link>
+      <main className={styles.main}>
+        {success && <div className={styles.alertSuccess}><span>✓</span><span>{success}</span></div>}
+        {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
+        {notice && <div className={styles.alertInfo}><span>ℹ</span><span>{notice}</span></div>}
+
+        <Link href={`/dashboard/projects/${project.id}`} className={styles.backLink}>← Back to {project.name}</Link>
+
+        <div className={styles.pageHeader}>
+          <h1 className={styles.pageTitle}>Integrations &amp; Webhooks</h1>
+          <p className={styles.pageSubtitle}>Connect {project.name} with HubSpot CRM or receive real-time attribution payloads via webhooks.</p>
         </div>
 
-        <div style={{ marginBottom: "2rem" }}>
-          <h1 style={{ fontSize: "1.75rem", fontWeight: 700, margin: 0, color: "var(--sorget-dark, #3A313C)" }}>
-            Integrations &amp; Webhooks
-          </h1>
-          <p style={{ color: "var(--sorget-grey, #64748b)", margin: "0.25rem 0 0 0", fontSize: "0.95rem" }}>
-            Connect {project.name} with HubSpot or receive real-time attribution payloads via webhooks.
-          </p>
-        </div>
-
-        {/* Flash messages */}
-        {success && (
-          <div className="alert alert-success" style={{ marginBottom: "1.5rem" }}>
-            ✓ {success}
-          </div>
-        )}
-        {errorMsg && (
-          <div className="alert alert-error" style={{ marginBottom: "1.5rem" }}>
-            ✗ {errorMsg}
-          </div>
-        )}
-        {notice && (
-          <div className="alert alert-info" style={{ marginBottom: "1.5rem" }}>
-            ℹ {notice}
-          </div>
-        )}
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-          {/* CRM Integrations Section */}
-          <div
-            className="card"
-            style={{
-              maxWidth: "100%",
-              background: "#ffffff",
-              border: `1px solid ${isHubSpotConnected ? "#a7f3d0" : "#e2e8f0"}`,
-              borderRadius: "14px",
-              padding: "1.75rem",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
-              <span style={{ fontSize: "2rem" }}>🟠</span>
-              <div style={{ flex: 1 }}>
-                <h2 style={{ margin: 0, fontSize: "1.25rem", color: "var(--sorget-dark, #3A313C)" }}>HubSpot CRM</h2>
-                <span style={{
-                  fontSize: "0.8rem",
-                  color: isHubSpotConnected ? "#059669" : "#64748b",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.3rem",
-                  marginTop: "0.2rem",
-                }}>
-                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: isHubSpotConnected ? "#10b981" : "#94a3b8", display: "inline-block" }} />
-                  {isHubSpotConnected ? `Connected${hubspotConnection?.portal_id ? ` · Portal ${hubspotConnection.portal_id}` : ""}` : "Not Connected"}
-                </span>
+        <div className={styles.cards}>
+          {/* HubSpot CRM */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                <span style={{ fontSize: "1.5rem" }}>🟠</span>
+                <div>
+                  <h2 className={styles.cardTitle}>HubSpot CRM</h2>
+                  <p className={styles.muted} style={{ marginTop: "2px" }}>
+                    {isHubSpotConnected
+                      ? `Connected${hubspotConnection?.portal_id ? ` · Portal ${hubspotConnection.portal_id}` : ""}`
+                      : "Not Connected"}
+                  </p>
+                </div>
               </div>
+              {isHubSpotConnected ? (
+                <span className={styles.badgeDone}>✓ Active Sync</span>
+              ) : (
+                <span className={styles.badgePending}>Ready to Connect</span>
+              )}
             </div>
-            <p style={{ fontSize: "0.875rem", color: "var(--sorget-grey, #64748b)", margin: "0 0 1.25rem 0", lineHeight: 1.5 }}>
-              Automatically syncs captured channel, drilldown, and landing page fields to HubSpot Contact properties via OAuth.
+
+            <p className={styles.cardSubtitle}>
+              Automatically synchronizes captured channel, drilldown, and landing page fields to HubSpot Contact properties via OAuth.
             </p>
 
             {isPatToken && (
-              <div style={{ fontSize: "0.825rem", color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "8px", padding: "0.85rem 1rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
-                ⚠ <strong>Configuration Warning:</strong> <code>HUBSPOT_CLIENT_ID</code> in <code>.env</code> starts with <code>pat-</code>, which is a single-portal <em>Private App Token</em>. HubSpot OAuth requires a <em>Public Developer App Client ID</em> created at <a href="https://developers.hubspot.com/" target="_blank" rel="noopener noreferrer" style={{ color: "#b45309", textDecoration: "underline", fontWeight: 600 }}>developers.hubspot.com</a>.
+              <div className={styles.alertError}>
+                <span>⚠️</span>
+                <span><strong>Configuration Warning:</strong> <code>HUBSPOT_CLIENT_ID</code> starts with <code>pat-</code>. HubSpot OAuth requires a Public Developer App Client ID.</span>
               </div>
             )}
 
             {isHubSpotConnected && !hubspotConnection?.scopes?.includes("crm.schemas.contacts.write") && (
-              <div style={{ fontSize: "0.85rem", color: "#0369a1", background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: "8px", padding: "0.85rem 1rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
-                ℹ <strong>Reconnection Recommended:</strong> Sorget now supports automatic HubSpot attribution property provisioning. Please click <strong>↻ Reconnect HubSpot</strong> below to grant the <code>crm.schemas.contacts.write</code> scope.
+              <div className={styles.alertInfo}>
+                <span>ℹ</span>
+                <span><strong>Reconnection Recommended:</strong> Reconnect HubSpot to grant the <code>crm.schemas.contacts.write</code> scope.</span>
               </div>
             )}
 
             {!project.workspace_id ? (
-              <div style={{ fontSize: "0.8rem", color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "6px", padding: "0.75rem 1rem" }}>
-                ⚠ This project has no workspace assigned. A workspace is required for CRM integrations.
-              </div>
+              <div className={styles.alertError}>This website has no workspace assigned.</div>
             ) : !hubspotOAuthUrl ? (
-              <div style={{ fontSize: "0.8rem", color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "6px", padding: "0.75rem 1rem" }}>
-                ⚠ <code>HUBSPOT_CLIENT_ID</code> is not configured. Set it in <code>.env</code> to enable OAuth.
-              </div>
+              <div className={styles.alertInfo}>Set <code>HUBSPOT_CLIENT_ID</code> in <code>.env</code> to enable OAuth.</div>
             ) : isHubSpotConnected ? (
-              <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-                <a
-                  href={hubspotOAuthUrl}
-                  style={{
-                    display: "inline-block",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "6px",
-                    background: "#ecfdf5",
-                    border: "1px solid #a7f3d0",
-                    color: "#059669",
-                    fontSize: "0.875rem",
-                    textDecoration: "none",
-                    fontWeight: 500,
-                  }}
-                >
-                  ↻ Reconnect HubSpot
-                </a>
+              <div className={styles.row}>
+                <a href={hubspotOAuthUrl} className={styles.btnSecondary}>↻ Reconnect HubSpot</a>
                 <form action="/api/crm/hubspot/disconnect" method="POST" style={{ display: "inline" }}>
                   <input type="hidden" name="workspace_id" value={project.workspace_id} />
-                  <button
-                    type="submit"
-                    style={{
-                      padding: "0.5rem 1rem",
-                      borderRadius: "6px",
-                      background: "#fef2f2",
-                      border: "1px solid #fecaca",
-                      color: "#dc2626",
-                      fontSize: "0.875rem",
-                      cursor: "pointer",
-                      fontWeight: 500,
-                    }}
-                  >
-                    Disconnect
-                  </button>
+                  <button type="submit" className={styles.btnDanger}>Disconnect</button>
                 </form>
               </div>
             ) : (
-              <a
-                href={hubspotOAuthUrl}
-                className="btn btn-primary"
-                style={{ textDecoration: "none", display: "inline-block" }}
-              >
-                Connect HubSpot →
-              </a>
+              <a href={hubspotOAuthUrl} className={styles.btnPrimary}>Connect HubSpot →</a>
             )}
           </div>
 
-          {/* Outbound Webhooks Section */}
-          <div className="card" style={{ maxWidth: "100%", background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "1.75rem", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-              <span style={{ fontSize: "1.5rem" }}>⚡</span>
-              <h2 style={{ fontSize: "1.25rem", margin: 0, color: "var(--sorget-dark, #3A313C)" }}>Outbound Webhooks</h2>
+          {/* Outbound Webhooks */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ fontSize: "1.25rem" }}>⚡</span>
+                <h2 className={styles.cardTitle}>Outbound Webhooks</h2>
+              </div>
             </div>
-            <p style={{ fontSize: "0.875rem", color: "var(--sorget-grey, #64748b)", margin: "0.25rem 0 1.25rem 0", lineHeight: 1.5 }}>
-              Sorget sends signed HTTP POST payloads whenever a lead is captured on {project.name}.
+            <p className={styles.cardSubtitle}>
+              Sorget sends signed HTTP POST payloads whenever a submission is captured on {project.name}.
             </p>
 
             {(!webhooks || webhooks.length === 0) ? (
-              <div style={{ background: "#f8fafc", padding: "1.5rem", borderRadius: "8px", border: "1px dashed #cbd5e1", textAlign: "center", marginBottom: "1.5rem" }}>
-                <p style={{ color: "var(--sorget-grey, #64748b)", margin: 0, fontSize: "0.875rem" }}>
-                  No webhooks configured yet for this website. Add an endpoint below.
-                </p>
+              <div className={styles.subBoxDashed} style={{ marginBottom: "1rem" }}>
+                <p className={styles.muted}>No webhooks configured yet for this website. Add an endpoint below.</p>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.5rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
                 {webhooks.map((wh: any) => (
-                  <div key={wh.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", border: "1px solid #e2e8f0", padding: "0.85rem 1rem", borderRadius: "8px" }}>
+                  <div key={wh.id} className={styles.subBox} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <div style={{ fontFamily: "monospace", fontSize: "0.875rem", color: "var(--sorget-pink, #BB0C68)", fontWeight: 600 }}>{wh.url}</div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--sorget-grey, #64748b)", marginTop: "0.2rem" }}>
-                        Secret: <code>{wh.secret.substring(0, 8)}••••••••</code> · Status: <span style={{ color: "#059669", fontWeight: 600 }}>{wh.status}</span>
+                      <div style={{ fontFamily: "monospace", fontSize: "calc(.25rem * 4)", color: "#3A313C", fontWeight: 600 }}>{wh.url}</div>
+                      <div className={styles.muted} style={{ marginTop: "0.15rem" }}>
+                        Secret: <code>{wh.secret.substring(0, 8)}••••</code> · Status: <span style={{ color: "#059669", fontWeight: 500 }}>{wh.status}</span>
                       </div>
                     </div>
                     <form action={deleteWebhook}>
                       <input type="hidden" name="webhook_id" value={wh.id} />
                       <input type="hidden" name="project_id" value={project.id} />
                       <input type="hidden" name="redirect_url" value={`/dashboard/projects/${project.id}/integrations`} />
-                      <button
-                        type="submit"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "#dc2626",
-                          fontSize: "0.8125rem",
-                          cursor: "pointer",
-                          fontWeight: 500,
-                        }}
-                      >
-                        Remove
-                      </button>
+                      <button type="submit" className={styles.btnDanger}>Remove</button>
                     </form>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Add Webhook Form */}
-            <div style={{ background: "#f8fafc", padding: "1.25rem", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-              <h3 style={{ fontSize: "0.95rem", margin: "0 0 0.75rem 0", color: "var(--sorget-dark, #3A313C)", fontWeight: 600 }}>
-                + Add Webhook Endpoint
-              </h3>
-              <form
-                action={createWebhook}
-                style={{
-                  display: "flex",
-                  gap: "0.75rem",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                }}
-              >
+            <div className={styles.subBox}>
+              <p className={styles.muted} style={{ marginBottom: "0.5rem", fontWeight: 600 }}>Add Webhook Endpoint</p>
+              <form action={createWebhook} className={styles.row}>
                 <input type="hidden" name="project_id" value={project.id} />
                 <input type="hidden" name="redirect_url" value={`/dashboard/projects/${project.id}/integrations`} />
-                <input
-                  name="url"
-                  type="url"
-                  placeholder="https://your-api.com/webhooks/attributer"
-                  required
-                  style={{
-                    flex: 1,
-                    minWidth: "260px",
-                    background: "#ffffff",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "6px",
-                    padding: "0.5rem 0.75rem",
-                    color: "var(--sorget-dark, #3A313C)",
-                    fontSize: "0.875rem",
-                  }}
-                />
-                <button type="submit" className="btn btn-primary btn-sm">
-                  Add Webhook
-                </button>
+                <input name="url" type="url" placeholder="https://your-api.com/webhooks/attributer" required className={styles.input} style={{ flex: 1, minWidth: "240px" }} />
+                <button type="submit" className={styles.btnPrimary}>Add Webhook</button>
               </form>
             </div>
           </div>

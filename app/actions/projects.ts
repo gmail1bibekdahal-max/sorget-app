@@ -18,11 +18,11 @@ export async function createProject(formData: FormData) {
     redirect("/login");
   }
 
-  const name = (formData.get("name") as string)?.trim();
   const website = (formData.get("website") as string)?.trim() || null;
+  const name = (formData.get("name") as string)?.trim() || website || "";
 
   if (!name) {
-    redirect("/dashboard/projects/new?error=" + encodeURIComponent("Project name is required."));
+    redirect("/onboarding?error=" + encodeURIComponent("Website URL is required."));
   }
 
   // Ensure user has a valid workspace
@@ -60,7 +60,7 @@ export async function createProject(formData: FormData) {
   await healOrphanProjects(supabase, user.id, workspace.id);
 
   revalidatePath("/dashboard");
-  redirect(`/dashboard/projects/${project.id}`);
+  redirect("/planning");
 }
 
 export async function updateProject(formData: FormData) {
@@ -170,4 +170,6 @@ export async function deleteProject(formData: FormData) {
     redirect("/dashboard?error=" + encodeURIComponent("Failed to delete project."));
   }
 
+  revalidatePath("/dashboard");
+  redirect("/dashboard?success=" + encodeURIComponent("Project deleted successfully."));
 }

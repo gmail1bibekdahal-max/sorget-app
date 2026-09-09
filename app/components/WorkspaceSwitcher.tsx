@@ -34,7 +34,7 @@ export function WorkspaceSwitcher({ workspaces, activeWorkspaceId }: WorkspaceSw
   };
 
   return (
-    <div style={{ position: "relative", display: "inline-block" }}>
+    <div style={{ position: "relative", width: "100%" }}>
       <button
         id="workspace-switcher-btn"
         type="button"
@@ -42,37 +42,24 @@ export function WorkspaceSwitcher({ workspaces, activeWorkspaceId }: WorkspaceSw
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "0.5rem",
-          background: "#ffffff",
-          border: "1.5px solid var(--color-border, #e2e8f0)",
-          padding: "0.4rem 0.75rem",
+          justifyContent: "space-between",
+          width: "100%",
+          background: "#f3f4f6",
+          border: "1px solid #e9eaeb",
+          padding: "0.5rem 0.75rem",
           borderRadius: "8px",
-          color: "var(--sorget-dark, #3A313C)",
+          color: "#3A313C",
           cursor: "pointer",
-          fontSize: "0.875rem",
+          fontSize: "calc(.25rem * 4)",
           fontWeight: 600,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
         }}
       >
-        <span style={{ fontSize: "1rem" }}>🏢</span>
-        <span style={{ maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "140px" }}>
           {activeWorkspace.name}
         </span>
-        <span
-          style={{
-            fontSize: "0.7rem",
-            textTransform: "uppercase",
-            background: "var(--sorget-pink-light, rgba(187, 12, 104, 0.08))",
-            color: "var(--sorget-pink, #BB0C68)",
-            border: "1px solid var(--sorget-pink-border, rgba(187, 12, 104, 0.25))",
-            padding: "0.1rem 0.4rem",
-            borderRadius: "4px",
-            fontWeight: 700,
-          }}
-        >
-          {activeWorkspace.role}
-        </span>
-        <span style={{ fontSize: "0.7rem", opacity: 0.6 }}>▼</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, flexShrink: 0 }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
       </button>
 
       {isOpen && (
@@ -80,20 +67,19 @@ export function WorkspaceSwitcher({ workspaces, activeWorkspaceId }: WorkspaceSw
           id="workspace-dropdown"
           style={{
             position: "absolute",
-            top: "100%",
+            top: "calc(100% + 4px)",
             left: 0,
-            marginTop: "0.5rem",
+            width: "100%",
             background: "#ffffff",
-            border: "1px solid var(--color-border, #e2e8f0)",
-            borderRadius: "10px",
-            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+            border: "1px solid var(--color-border, #e5e7eb)",
+            borderRadius: "6px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.06)",
             zIndex: 100,
-            minWidth: "230px",
-            padding: "0.5rem",
+            padding: "0.35rem",
           }}
         >
-          <div style={{ fontSize: "0.7rem", color: "var(--text-muted, #64748b)", padding: "0.35rem 0.5rem", fontWeight: 700, letterSpacing: "0.05em" }}>
-            WORKSPACES
+          <div style={{ fontSize: "0.6875rem", color: "var(--text-muted, #64748b)", padding: "0.25rem 0.5rem", fontWeight: 600 }}>
+            Workspaces
           </div>
           {workspaces.map((ws) => (
             <button
@@ -105,23 +91,23 @@ export function WorkspaceSwitcher({ workspaces, activeWorkspaceId }: WorkspaceSw
                 alignItems: "center",
                 justifyContent: "space-between",
                 width: "100%",
-                padding: "0.5rem 0.65rem",
-                borderRadius: "6px",
+                padding: "0.4rem 0.5rem",
+                borderRadius: "4px",
                 border: "none",
-                background: ws.id === activeWorkspace.id ? "var(--sorget-pink-light, rgba(187, 12, 104, 0.08))" : "transparent",
-                color: ws.id === activeWorkspace.id ? "var(--sorget-pink, #BB0C68)" : "var(--sorget-dark, #3A313C)",
+                background: ws.id === activeWorkspace.id ? "#f3f4f6" : "transparent",
+                color: "var(--text-primary, #0f172a)",
                 cursor: "pointer",
                 textAlign: "left",
-                fontSize: "0.875rem",
-                fontWeight: ws.id === activeWorkspace.id ? 700 : 500,
+                fontSize: "0.8125rem",
+                fontWeight: ws.id === activeWorkspace.id ? 600 : 400,
               }}
             >
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ws.name}</span>
-              <span style={{ fontSize: "0.7rem", color: "var(--text-muted, #64748b)" }}>{ws.role}</span>
+              <span style={{ fontSize: "0.6875rem", color: "var(--text-muted, #64748b)" }}>{ws.role}</span>
             </button>
           ))}
 
-          <div style={{ height: "1px", background: "var(--color-border, #e2e8f0)", margin: "0.4rem 0" }} />
+          <div style={{ height: "1px", background: "var(--color-border, #e5e7eb)", margin: "0.3rem 0" }} />
 
           <button
             type="button"
@@ -133,19 +119,19 @@ export function WorkspaceSwitcher({ workspaces, activeWorkspaceId }: WorkspaceSw
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "0.5rem",
+              gap: "0.35rem",
               width: "100%",
-              padding: "0.5rem 0.65rem",
-              borderRadius: "6px",
+              padding: "0.4rem 0.5rem",
+              borderRadius: "4px",
               border: "none",
               background: "transparent",
-              color: "var(--sorget-pink, #BB0C68)",
+              color: "var(--sorget-brand, #BB0C68)",
               cursor: "pointer",
               fontSize: "0.8125rem",
-              fontWeight: 600,
+              fontWeight: 500,
             }}
           >
-            <span>+</span> Create New Workspace
+            <span>+</span> Create workspace
           </button>
         </div>
       )}
@@ -155,35 +141,34 @@ export function WorkspaceSwitcher({ workspaces, activeWorkspaceId }: WorkspaceSw
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(15, 23, 42, 0.5)",
+            background: "rgba(15, 23, 42, 0.4)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1000,
-            backdropFilter: "blur(4px)",
           }}
         >
           <div
             className="card"
             style={{
               background: "#ffffff",
-              border: "1px solid var(--color-border, #e2e8f0)",
-              borderRadius: "16px",
-              padding: "2rem",
-              maxWidth: "420px",
+              border: "1px solid var(--color-border, #e5e7eb)",
+              borderRadius: "8px",
+              padding: "1.75rem",
+              maxWidth: "380px",
               width: "100%",
-              boxShadow: "0 20px 40px rgba(0, 0, 0, 0.12)",
+              boxShadow: "0 10px 25px rgba(0, 0, 0, 0.08)",
             }}
           >
-            <h3 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: "1.25rem", color: "var(--sorget-dark, #3A313C)" }}>
-              Create New Workspace
+            <h3 style={{ marginTop: 0, marginBottom: "0.35rem", fontSize: "1.125rem", color: "var(--text-primary, #0f172a)" }}>
+              Create Workspace
             </h3>
-            <p style={{ marginBottom: "1.5rem", fontSize: "0.875rem", color: "var(--text-muted, #64748b)" }}>
+            <p style={{ marginBottom: "1.25rem", fontSize: "0.8125rem", color: "var(--text-muted, #64748b)" }}>
               Add a separate workspace for another brand or client.
             </p>
             <form action={createWorkspace}>
-              <div className="form-group" style={{ marginBottom: "1.5rem" }}>
-                <label htmlFor="ws-name" style={{ display: "block", marginBottom: "0.35rem", fontSize: "0.8125rem", fontWeight: 600 }}>
+              <div className="form-group" style={{ marginBottom: "1.25rem" }}>
+                <label htmlFor="ws-name" style={{ display: "block", marginBottom: "0.35rem", fontSize: "0.8125rem", fontWeight: 500 }}>
                   Workspace Name
                 </label>
                 <input
@@ -196,19 +181,17 @@ export function WorkspaceSwitcher({ workspaces, activeWorkspaceId }: WorkspaceSw
                 />
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="btn btn-secondary"
-                  style={{ width: "auto", padding: "0.5rem 1rem" }}
+                  className="btn btn-secondary btn-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
-                  style={{ width: "auto", padding: "0.5rem 1.25rem" }}
+                  className="btn btn-primary btn-sm"
                 >
                   Create
                 </button>
