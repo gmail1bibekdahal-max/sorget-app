@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { login } from "@/app/actions/auth";
+import GoogleSignInButton from "@/app/components/GoogleSignInButton";
 
 interface PageProps {
   searchParams: Promise<{ error?: string; notice?: string }>;
@@ -20,7 +21,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
     <div className="page">
       <div className="card">
         {/* Brand Logo */}
-        <Link href="/" className="logo">
+        <a href="https://sorget.site/" className="logo" title="Back to Sorget">
           <Image
             src="/logo.png"
             alt="Sorget Logo"
@@ -30,10 +31,10 @@ export default async function LoginPage({ searchParams }: PageProps) {
             priority
           />
           <span>Sorget</span>
-        </Link>
+        </a>
 
         <h1>Welcome back</h1>
-        <p style={{ marginBottom: "2rem", color: "var(--text-muted)" }}>
+        <p style={{ marginBottom: "1.5rem", color: "var(--text-muted)" }}>
           Sign in to your Sorget account.
         </p>
 
@@ -50,6 +51,13 @@ export default async function LoginPage({ searchParams }: PageProps) {
             <span>{notice}</span>
           </div>
         )}
+
+        {/* Continue with Google */}
+        <GoogleSignInButton text="Continue with Google" />
+
+        <div className="auth-divider">
+          <span>or continue with email</span>
+        </div>
 
         <form action={login} id="login-form">
           <div className="form-group">

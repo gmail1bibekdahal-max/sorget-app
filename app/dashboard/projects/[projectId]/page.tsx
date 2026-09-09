@@ -159,14 +159,14 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
   const installSnippet = `<script\n  src="${scriptSrc}"\n  data-tracking-id="${p.tracking_id}">\n</script>`;
 
   return (
-    <div className="dashboard-layout" style={{ minHeight: "100vh" }}>
+    <div className="dashboard-layout">
       <MainNavigation
         userEmail={user.email}
         workspaces={userWorkspaces}
         activeWorkspaceId={p.workspace_id || undefined}
       />
 
-      <main className="dashboard-main" style={{ maxWidth: "1000px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+      <main className="dashboard-main" style={{ maxWidth: "1100px" }}>
         {errorMsg && <div className="alert alert-error" style={{ marginBottom: "1.25rem" }}>{errorMsg}</div>}
         {successMsg && <div className="alert alert-success" style={{ marginBottom: "1.25rem" }}>{successMsg}</div>}
         {leadsError && <div className="alert alert-error" style={{ marginBottom: "1.25rem" }}>Failed to load verification log.</div>}

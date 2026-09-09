@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSafeNextPath } from "@/lib/auth-callback";
+import { getOrCreateDefaultWorkspace, healOrphanProjects } from "@/lib/workspaces";
 
 export { getSafeNextPath };
 
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
   const errorParam = requestUrl.searchParams.get("error");
   const errorDesc = requestUrl.searchParams.get("error_description");
 
-  const safeNext = getSafeNextPath(nextParam, "/reset-password");
+  const safeNext = nextParam ? getSafeNextPath(nextParam, "/dashboard") : getSafeNextPath(null, "/reset-password");
   const fallbackUrl = safeNext.startsWith("/reset-password") ? "/forgot-password" : "/login";
 
   // 1. Handle error parameters returned directly from Supabase Auth
@@ -54,6 +55,22 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // 4. Code exchange succeeded — redirect to the validated internal path with active session cookies
+  // 4. Provision / heal workspace for authenticated user (e.g. Google OAuth or email sign-in)
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const ws = await getOrCreateDefaultWorkspace(
+        supabase,
+        user.id,
+        user.email,
+        user.user_metadata?.full_name || user.user_metadata?.name
+      );
+      await healOrphanProjects(supabase, user.id, ws.id);
+    }
+  } catch (wsErr) {
+    console.error("[auth/callback] Workspace provisioning error:", wsErr);
+  }
+
+  // 5. Code exchange succeeded — redirect to the validated internal path with active session cookies
   return NextResponse.redirect(new URL(safeNext, request.url));
 }

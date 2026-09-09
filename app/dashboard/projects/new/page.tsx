@@ -37,13 +37,13 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
     }));
 
   return (
-    <div className="dashboard-layout" style={{ minHeight: "100vh" }}>
+    <div className="dashboard-layout">
       <MainNavigation
         userEmail={user.email}
         workspaces={userWorkspaces}
       />
 
-      <main className="dashboard-main" style={{ maxWidth: "600px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+      <main className="dashboard-main" style={{ maxWidth: "650px" }}>
         <div style={{ marginBottom: "1.5rem" }}>
           <Link href="/dashboard" style={{ color: "var(--sorget-pink, #BB0C68)", fontSize: "0.875rem", textDecoration: "none", fontWeight: 500 }}>
             ← Back to Websites

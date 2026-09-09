@@ -93,14 +93,14 @@ export default async function SettingsPage({ searchParams }: PageProps) {
   ];
 
   return (
-    <div className="dashboard-layout" style={{ minHeight: "100vh" }}>
+    <div className="dashboard-layout">
       <MainNavigation
         userEmail={user.email}
         workspaces={userWorkspaces}
         activeWorkspaceId={activeWs.id}
       />
 
-      <main style={{ maxWidth: "900px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+      <main className="dashboard-main" style={{ maxWidth: "1000px" }}>
         {/* Alerts */}
         {successMsg && (
           <div className="alert alert-success" style={{ marginBottom: "1.5rem" }}>

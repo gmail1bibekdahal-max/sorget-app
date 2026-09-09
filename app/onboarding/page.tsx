@@ -27,7 +27,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
   return (
     <div className="page">
       <div className="card" style={{ maxWidth: "540px", margin: "2rem auto" }}>
-        <Link href="/" className="logo" style={{ marginBottom: "1.5rem" }}>
+        <a href="https://sorget.site/" className="logo" title="Back to Sorget" style={{ marginBottom: "1.5rem" }}>
           <Image
             src="/logo.png"
             alt="Sorget Logo"
@@ -37,7 +37,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
             priority
           />
           <span>Sorget</span>
-        </Link>
+        </a>
 
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
           <span

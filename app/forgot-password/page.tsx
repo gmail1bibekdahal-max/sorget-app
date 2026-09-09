@@ -20,7 +20,7 @@ export default async function ForgotPasswordPage({ searchParams }: PageProps) {
     <div className="page">
       <div className="card">
         {/* Brand Logo */}
-        <Link href="/" className="logo">
+        <a href="https://sorget.site/" className="logo" title="Back to Sorget">
           <Image
             src="/logo.png"
             alt="Sorget Logo"
@@ -30,7 +30,7 @@ export default async function ForgotPasswordPage({ searchParams }: PageProps) {
             priority
           />
           <span>Sorget</span>
-        </Link>
+        </a>
 
         <h1>Reset password</h1>
         <p style={{ marginBottom: "2rem", color: "var(--text-muted)" }}>

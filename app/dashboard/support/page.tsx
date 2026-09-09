@@ -45,10 +45,10 @@ export default async function SupportPage() {
     }));
 
   return (
-    <div className="dashboard-layout" style={{ minHeight: "100vh" }}>
+    <div className="dashboard-layout">
       <MainNavigation userEmail={user.email} workspaces={userWorkspaces} />
 
-      <main style={{ maxWidth: "900px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+      <main className="dashboard-main" style={{ maxWidth: "1000px" }}>
         {/* Header */}
         <div style={{ marginBottom: "2.5rem" }}>
           <h1 style={{ fontSize: "1.875rem", fontWeight: 700, margin: "0 0 0.5rem 0", color: "var(--sorget-dark, #3A313C)" }}>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { signup } from "@/app/actions/auth";
+import GoogleSignInButton from "@/app/components/GoogleSignInButton";
 
 interface PageProps {
   searchParams: Promise<{ error?: string; success?: string }>;
@@ -20,7 +21,7 @@ export default async function SignupPage({ searchParams }: PageProps) {
     <div className="page">
       <div className="card">
         {/* Brand Logo */}
-        <Link href="/" className="logo">
+        <a href="https://sorget.site/" className="logo" title="Back to Sorget">
           <Image
             src="/logo.png"
             alt="Sorget Logo"
@@ -30,10 +31,10 @@ export default async function SignupPage({ searchParams }: PageProps) {
             priority
           />
           <span>Sorget</span>
-        </Link>
+        </a>
 
         <h1>Create your account</h1>
-        <p style={{ marginBottom: "2rem", color: "var(--text-muted)" }}>
+        <p style={{ marginBottom: "1.5rem", color: "var(--text-muted)" }}>
           Start tracking where your leads and revenue actually come from.
         </p>
 
@@ -57,7 +58,15 @@ export default async function SignupPage({ searchParams }: PageProps) {
         )}
 
         {!success && (
-          <form action={signup} id="signup-form">
+          <>
+            {/* Continue with Google */}
+            <GoogleSignInButton text="Sign up with Google" />
+
+            <div className="auth-divider">
+              <span>or sign up with email</span>
+            </div>
+
+            <form action={signup} id="signup-form">
             <div className="form-group">
               <label htmlFor="signup-name">Full Name (optional)</label>
               <input
@@ -98,6 +107,7 @@ export default async function SignupPage({ searchParams }: PageProps) {
               Create Account
             </button>
           </form>
+          </>
         )}
 
         <div className="auth-footer">

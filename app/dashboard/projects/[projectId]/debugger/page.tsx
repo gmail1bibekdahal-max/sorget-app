@@ -51,14 +51,14 @@ export default async function DebuggerPage({ params }: PageProps) {
   const snippet = `<script src="${scriptSrc}" data-tracking-id="${project.tracking_id}"></script>`;
 
   return (
-    <div className="dashboard-layout" style={{ minHeight: "100vh" }}>
+    <div className="dashboard-layout">
       <MainNavigation
         userEmail={user.email}
         workspaces={userWorkspaces}
         activeWorkspaceId={project.workspace_id || undefined}
       />
 
-      <main style={{ maxWidth: "1000px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+      <main className="dashboard-main" style={{ maxWidth: "1050px" }}>
         <div style={{ marginBottom: "1.5rem" }}>
           <Link href={`/dashboard/projects/${project.id}`} style={{ color: "var(--sorget-pink, #BB0C68)", fontSize: "0.875rem", textDecoration: "none", fontWeight: 500 }}>
             ← Back to {project.name}

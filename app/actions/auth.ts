@@ -75,6 +75,25 @@ export async function login(formData: FormData) {
   redirect("/dashboard");
 }
 
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${siteUrl}/auth/callback?next=/dashboard`,
+    },
+  });
+
+  if (error) {
+    redirect("/login?error=" + encodeURIComponent(error.message));
+  }
+
+  if (data?.url) {
+    redirect(data.url);
+  }
+}
+
 export async function requestPasswordReset(formData: FormData) {
   const email = (formData.get("email") as string)?.trim();
 
