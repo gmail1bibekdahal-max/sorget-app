@@ -1,16 +1,50 @@
-import { signInWithGoogle } from "@/app/actions/auth";
+"use client";
+
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 interface GoogleSignInButtonProps {
   text?: string;
 }
 
 export default function GoogleSignInButton({ text = "Continue with Google" }: GoogleSignInButtonProps) {
+  const [loading, setLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const redirectTo = `${origin}/auth/callback?next=/onboarding`;
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+        },
+      });
+
+      if (error) {
+        console.error("Google sign in error:", error.message);
+        window.location.href = `/login?error=${encodeURIComponent(error.message)}`;
+      } else if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error("Unexpected error during Google sign in:", err);
+      setLoading(false);
+    }
+  };
+
   return (
-    <form action={signInWithGoogle} style={{ width: "100%", margin: "0 0 1.25rem 0" }}>
+    <div style={{ width: "100%", margin: "0 0 1.25rem 0" }}>
       <button
-        type="submit"
+        type="button"
         className="btn btn-google"
         id="btn-google-auth"
+        onClick={handleGoogleSignIn}
+        disabled={loading}
+        style={{ width: "100%", cursor: loading ? "wait" : "pointer", opacity: loading ? 0.8 : 1 }}
       >
         <svg
           className="google-icon"
@@ -36,8 +70,8 @@ export default function GoogleSignInButton({ text = "Continue with Google" }: Go
             d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
           />
         </svg>
-        <span>{text}</span>
+        <span>{loading ? "Connecting to Google..." : text}</span>
       </button>
-    </form>
+    </div>
   );
 }

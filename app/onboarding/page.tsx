@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { createProject } from "@/app/actions/projects";
+import { createOnboardingProject } from "@/app/actions/projects";
 import styles from "../Auth.module.css";
 
 interface PageProps {
@@ -10,7 +10,7 @@ interface PageProps {
 
 export const metadata = {
   title: "Welcome to Sorget — Onboarding",
-  description: "Set up your workspace and start tracking leads in minutes.",
+  description: "Set up your first website and start tracking leads.",
 };
 
 export default async function OnboardingPage({ searchParams }: PageProps) {
@@ -68,56 +68,52 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
             <span>Sorget</span>
           </a>
 
-          <h1 className={styles.title}>Welcome to Attributer</h1>
-          <p className={styles.subtitle}>Let's get your first website set up.</p>
+          <h1 className={styles.title}>Welcome to Sorget</h1>
+          <p className={styles.subtitle}>Let&apos;s get your first website set up.</p>
 
           {error && <div className={styles.alertError} role="alert">{error}</div>}
 
-          <form action={createProject} id="onboarding-form">
+          <form action={createOnboardingProject} id="onboarding-form">
             <div className={styles.formGroup}>
-              <label className={styles.label} htmlFor="project-website">What website do you want to use Attributer on? *</label>
-              <input id="project-website" name="website" type="text" placeholder="www.mysite.com" required autoFocus className={styles.input} />
+              <label className={styles.label} htmlFor="project-name">Website Name *</label>
+              <input
+                id="project-name"
+                name="name"
+                type="text"
+                placeholder="e.g. My Website or Acme Inc"
+                required
+                autoFocus
+                className={styles.input}
+              />
             </div>
+
             <div className={styles.formGroup}>
-              <label className={styles.label} htmlFor="project-cms">What website builder does this site use? *</label>
-              <select id="project-cms" name="cms" required className={styles.input} defaultValue="">
-                <option value="" disabled>Select your CMS</option>
-                <option value="wordpress">WordPress</option>
-                <option value="webflow">Webflow</option>
-                <option value="squarespace">Squarespace</option>
-                <option value="wix">Wix</option>
-                <option value="shopify">Shopify</option>
-                <option value="framer">Framer</option>
-                <option value="other">Other</option>
-              </select>
+              <label className={styles.label} htmlFor="project-website">Website URL *</label>
+              <input
+                id="project-website"
+                name="website"
+                type="text"
+                placeholder="e.g. https://www.example.com"
+                required
+                className={styles.input}
+              />
             </div>
-            <div className={styles.formGroup}>
-              <label className={styles.label} htmlFor="project-form-tool">What form tool does this website use? *</label>
-              <select id="project-form-tool" name="form_tool" required className={styles.input} defaultValue="">
-                <option value="" disabled>Select your form tool</option>
-                <option value="gravity_forms">Gravity Forms</option>
-                <option value="wpforms">WPForms</option>
-                <option value="typeform">Typeform</option>
-                <option value="hubspot_forms">HubSpot Forms</option>
-                <option value="marketo">Marketo</option>
-                <option value="pardot">Pardot</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
+
             <div className={styles.formGroup} style={{ marginBottom: "1.5rem" }}>
-              <label className={styles.label} htmlFor="project-crm">Where do you want to send the attribution information? *</label>
+              <label className={styles.label} htmlFor="project-crm">CRM Used *</label>
               <select id="project-crm" name="crm" required className={styles.input} defaultValue="">
-                <option value="" disabled>Select your CRM or destination</option>
-                <option value="salesforce">Salesforce</option>
+                <option value="" disabled>Select your CRM</option>
                 <option value="hubspot">HubSpot</option>
+                <option value="salesforce">Salesforce</option>
                 <option value="pipedrive">Pipedrive</option>
                 <option value="zoho">Zoho CRM</option>
                 <option value="close">Close</option>
-                <option value="other">Other</option>
+                <option value="other">Other / Custom</option>
               </select>
             </div>
+
             <button id="onboarding-submit" type="submit" className={styles.btnPrimary}>
-              Continue Setup
+              Continue
             </button>
           </form>
         </div>

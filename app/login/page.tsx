@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { login } from "@/app/actions/auth";
@@ -5,7 +6,7 @@ import GoogleSignInButton from "@/app/components/GoogleSignInButton";
 import styles from "../Auth.module.css";
 
 interface PageProps {
-  searchParams: Promise<{ error?: string; notice?: string }>;
+  searchParams: Promise<{ error?: string; notice?: string; code?: string; next?: string }>;
 }
 
 export const metadata = {
@@ -17,6 +18,11 @@ export default async function LoginPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const error = params.error;
   const notice = params.notice;
+
+  // If user lands on /login with an OAuth PKCE code, forward to /auth/callback
+  if (params.code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(params.code)}&next=${encodeURIComponent(params.next || "/onboarding")}`);
+  }
 
   return (
     <div className={styles.page}>

@@ -7,7 +7,7 @@ import {
 } from "@/src/billing.js";
 
 export interface PlanConfig {
-  id: "starter" | "growth" | "enterprise";
+  id: string;
   name: string;
   priceMonthlyUsd: number;
   priceMonthlyInr: number;
@@ -17,6 +17,7 @@ export interface PlanConfig {
   crmIntegrations: boolean;
   customWebhooks: boolean;
   prioritySupport: boolean;
+  trialDays?: number;
 }
 
 export const PLANS: Record<string, PlanConfig> = BASE_PLANS as any;

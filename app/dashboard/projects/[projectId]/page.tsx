@@ -131,13 +131,24 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
 
   const leads: Lead[] = leadsRaw ?? [];
 
+  const { data: allProjects } = await supabase
+    .from("projects")
+    .select("id, name")
+    .order("created_at", { ascending: true });
+
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const scriptSrc = siteUrl ? `${siteUrl}/attributer.js` : "/attributer.js";
   const installSnippet = `<script src="${scriptSrc}" data-tracking-id="${p.tracking_id}"></script>`;
 
   return (
     <div className={styles.layout}>
-      <MainNavigation userEmail={user.email} workspaces={userWorkspaces} activeWorkspaceId={p.workspace_id || undefined} />
+      <MainNavigation
+        userEmail={user.email}
+        workspaces={userWorkspaces}
+        activeWorkspaceId={p.workspace_id || undefined}
+        projects={allProjects ?? []}
+        activeProjectId={p.id}
+      />
 
       <main className={styles.main}>
         {sp.error && <div className={styles.alertError}><span>⚠️</span><span>{sp.error}</span></div>}
@@ -158,6 +169,28 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
               ) : (
                 <span className={styles.muted}>No URL specified</span>
               )}
+
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+                <Link
+                  href={`/dashboard/projects/${p.id}`}
+                  className={`${styles.btnSecondary} ${styles.btnSmall}`}
+                  style={{ background: "#f3f4f6", fontWeight: 700, color: "#111827" }}
+                >
+                  Overview
+                </Link>
+                <Link
+                  href={`/dashboard/projects/${p.id}/integrations`}
+                  className={`${styles.btnSecondary} ${styles.btnSmall}`}
+                >
+                  Integrations
+                </Link>
+                <Link
+                  href={`/dashboard/projects/${p.id}/leads`}
+                  className={`${styles.btnSecondary} ${styles.btnSmall}`}
+                >
+                  Leads ({leads.length})
+                </Link>
+              </div>
             </div>
             <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.35rem" }}>
               <span className={styles.muted} style={{ fontSize: "calc(.25rem * 3)", textTransform: "uppercase", fontWeight: 600 }}>Tracking ID</span>

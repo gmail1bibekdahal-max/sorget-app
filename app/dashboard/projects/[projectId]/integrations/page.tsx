@@ -77,9 +77,20 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
     hubspotOAuthUrl = buildHubSpotOAuthUrl(clientId, redirectUri, state);
   }
 
+  const { data: allProjects } = await supabase
+    .from("projects")
+    .select("id, name")
+    .order("created_at", { ascending: true });
+
   return (
     <div className={styles.layout}>
-      <MainNavigation userEmail={user.email} workspaces={userWorkspaces} activeWorkspaceId={project.workspace_id || undefined} activeProjectName={project.name} activeProjectHref={`/dashboard/projects/${project.id}`} />
+      <MainNavigation
+        userEmail={user.email}
+        workspaces={userWorkspaces}
+        activeWorkspaceId={project.workspace_id || undefined}
+        projects={allProjects ?? []}
+        activeProjectId={project.id}
+      />
 
       <main className={styles.main}>
         {success && <div className={styles.alertSuccess}><span>✓</span><span>{success}</span></div>}

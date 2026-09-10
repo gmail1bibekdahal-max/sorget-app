@@ -534,6 +534,113 @@ textarea::placeholder {
   font-weight: 600;
 }
 
+/* ── Expandable Website Rows ── */
+.sidebar-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  padding: 0.75rem 0.65rem 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-project-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 2px;
+}
+
+.sidebar-project-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius-sm);
+  color: #374151;
+  font-size: calc(.25rem * 3.75);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.sidebar-project-header:hover {
+  background-color: #f3f4f6;
+  color: var(--text-primary);
+}
+
+.sidebar-project-header-active {
+  background-color: #f3f4f6;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.sidebar-project-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.sidebar-chevron-btn {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 2px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sidebar-chevron-btn:hover {
+  color: #374151;
+  background: #e5e7eb;
+}
+
+.sidebar-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 1.25rem;
+  margin: 2px 0 4px;
+  border-left: 1.5px solid #e5e7eb;
+  margin-left: 1rem;
+}
+
+.sidebar-sublink {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  color: #6b7280;
+  font-size: calc(.25rem * 3.5);
+  font-weight: 500;
+  text-decoration: none;
+  transition: all var(--transition);
+}
+
+.sidebar-sublink:hover {
+  color: #111827;
+  background-color: #f3f4f6;
+}
+
+.sidebar-sublink-active {
+  color: #BB0C68 !important;
+  background-color: #fdf2f8 !important;
+  font-weight: 600;
+}
+
 .sidebar-icon {
   display: flex;
   align-items: center;

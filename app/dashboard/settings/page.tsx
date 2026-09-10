@@ -58,7 +58,12 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     .eq("workspace_id", activeWs.id)
     .single();
 
-  const currentPlanKey = subscription?.plan_id || "starter";
+  const { data: allProjects } = await supabase
+    .from("projects")
+    .select("id, name")
+    .order("created_at", { ascending: true });
+
+  const currentPlanKey = subscription?.plan || subscription?.plan_id || "starter";
   const currentPlan = (PLANS as any)[currentPlanKey] || PLANS.starter;
 
   const tabs = [
@@ -69,7 +74,12 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
   return (
     <div className={styles.layout}>
-      <MainNavigation userEmail={user.email} workspaces={userWorkspaces} activeWorkspaceId={activeWs.id} />
+      <MainNavigation
+        userEmail={user.email}
+        workspaces={userWorkspaces}
+        activeWorkspaceId={activeWs.id}
+        projects={allProjects ?? []}
+      />
 
       <main className={styles.main}>
         {successMsg && <div className={styles.alertSuccess}><span>✓</span><span>{successMsg}</span></div>}

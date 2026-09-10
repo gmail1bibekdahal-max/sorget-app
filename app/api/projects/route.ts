@@ -3,6 +3,40 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultWorkspace } from "@/lib/workspaces";
 
 /**
+ * GET /api/projects
+ * Returns projects accessible to the authenticated user.
+ */
+export async function GET() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized. Please log in first." },
+      { status: 401 }
+    );
+  }
+
+  const { data: projects, error } = await supabase
+    .from("projects")
+    .select("id, name, website, tracking_id, workspace_id, created_at")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ success: true, projects: projects ?? [] });
+}
+
+/**
  * POST /api/projects
  *
  * Creates a new project for the authenticated user.

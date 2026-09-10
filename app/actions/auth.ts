@@ -2,8 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultWorkspace, healOrphanProjects } from "@/lib/workspaces";
+
+async function getOriginFromHeaders(): Promise<string> {
+  const headerList = await headers();
+  const host = headerList.get("x-forwarded-host") || headerList.get("host");
+  const proto = headerList.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https");
+  return host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001");
+}
 
 export async function signup(formData: FormData) {
   const email = (formData.get("email") as string)?.trim();
@@ -77,11 +85,11 @@ export async function login(formData: FormData) {
 
 export async function signInWithGoogle() {
   const supabase = await createClient();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
+  const origin = await getOriginFromHeaders();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${siteUrl}/auth/callback?next=/dashboard`,
+      redirectTo: `${origin}/auth/callback?next=/onboarding`,
     },
   });
 
@@ -102,9 +110,9 @@ export async function requestPasswordReset(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
+  const origin = await getOriginFromHeaders();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
+    redirectTo: `${origin}/auth/callback?next=/reset-password`,
   });
 
   if (error) {

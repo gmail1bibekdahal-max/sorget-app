@@ -6,6 +6,87 @@ import { createClient } from "@/lib/supabase/server";
 import { generateTrackingId } from "@/lib/tracking-id";
 import { getOrCreateDefaultWorkspace, healOrphanProjects } from "@/lib/workspaces";
 
+import { canAddWebsite, PLANS } from "@/lib/billing";
+
+/**
+ * Onboarding First Website Creation.
+ * Creates the user's initial project during onboarding and directs to /planning.
+ * Idempotent: if a project already exists in the workspace, updates and redirects to /planning.
+ */
+export async function createOnboardingProject(formData: FormData) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    redirect("/login");
+  }
+
+  const name = (formData.get("name") as string)?.trim();
+  const website = (formData.get("website") as string)?.trim();
+  const crm = (formData.get("crm") as string)?.trim() || "other";
+
+  if (!name) {
+    redirect("/onboarding?error=" + encodeURIComponent("Website name is required."));
+  }
+  if (!website) {
+    redirect("/onboarding?error=" + encodeURIComponent("Website URL is required."));
+  }
+
+  const workspace = await getOrCreateDefaultWorkspace(
+    supabase,
+    user.id,
+    user.email,
+    user.user_metadata?.full_name
+  );
+
+  // Idempotency check: prevent duplicate projects on repeated submissions
+  const { data: existingProjects } = await supabase
+    .from("projects")
+    .select("id, name, tracking_id")
+    .eq("workspace_id", workspace.id)
+    .order("created_at", { ascending: true })
+    .limit(1);
+
+  if (existingProjects && existingProjects.length > 0) {
+    await supabase
+      .from("projects")
+      .update({ name, website, crm })
+      .eq("id", existingProjects[0].id);
+
+    revalidatePath("/dashboard");
+    redirect("/planning");
+  }
+
+  const trackingId = generateTrackingId();
+
+  const { error: insertError } = await supabase
+    .from("projects")
+    .insert([
+      {
+        name,
+        website,
+        crm,
+        tracking_id: trackingId,
+        user_id: user.id,
+        workspace_id: workspace.id,
+      },
+    ]);
+
+  if (insertError) {
+    console.error("[createOnboardingProject] Error creating first project:", insertError.message);
+    redirect("/onboarding?error=" + encodeURIComponent(insertError.message));
+  }
+
+  await healOrphanProjects(supabase, user.id, workspace.id);
+
+  revalidatePath("/dashboard");
+  redirect("/planning");
+}
+
 export async function createProject(formData: FormData) {
   const supabase = await createClient();
 
@@ -22,7 +103,7 @@ export async function createProject(formData: FormData) {
   const name = (formData.get("name") as string)?.trim() || website || "";
 
   if (!name) {
-    redirect("/onboarding?error=" + encodeURIComponent("Website URL is required."));
+    redirect("/dashboard/projects/new?error=" + encodeURIComponent("Website name is required."));
   }
 
   // Ensure user has a valid workspace
@@ -32,6 +113,31 @@ export async function createProject(formData: FormData) {
     user.email,
     user.user_metadata?.full_name
   );
+
+  // ── SERVER-SIDE PLAN LIMIT ENFORCEMENT ──
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("plan, plan_id, status")
+    .eq("workspace_id", workspace.id)
+    .single();
+
+  const activePlanKey = sub?.plan || sub?.plan_id || "starter";
+  const { count: currentCount } = await supabase
+    .from("projects")
+    .select("id", { count: "exact", head: true })
+    .eq("workspace_id", workspace.id);
+
+  const websiteCount = currentCount ?? 0;
+  if (!canAddWebsite(activePlanKey, websiteCount)) {
+    const planConfig = PLANS[activePlanKey] || PLANS.starter;
+    const maxWebsites = planConfig.websiteLimit || 1;
+    redirect(
+      "/dashboard/projects/new?error=" +
+        encodeURIComponent(
+          `This plan supports ${maxWebsites} website${maxWebsites === 1 ? "" : "s"}. Upgrade your plan to add another website.`
+        )
+    );
+  }
 
   // Always generate tracking ID server-side using the canonical generator
   const trackingId = generateTrackingId();
@@ -60,7 +166,7 @@ export async function createProject(formData: FormData) {
   await healOrphanProjects(supabase, user.id, workspace.id);
 
   revalidatePath("/dashboard");
-  redirect("/planning");
+  redirect(`/dashboard/projects/${project.id}`);
 }
 
 export async function updateProject(formData: FormData) {

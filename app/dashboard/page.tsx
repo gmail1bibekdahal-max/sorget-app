@@ -90,6 +90,11 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
     lead_count: (leads ?? []).filter((l) => l.project_id === p.id).length,
   }));
 
+  // Target User Flow: users without a tracked website must complete onboarding first
+  if (projectList.length === 0) {
+    redirect("/onboarding");
+  }
+
   const leadList: Lead[] = leads ?? [];
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
@@ -101,7 +106,12 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
 
   return (
     <div className={styles.layout}>
-      <MainNavigation userEmail={user.email} workspaces={userWorkspaces} activeWorkspaceId={selectedWsId} />
+      <MainNavigation
+        userEmail={user.email}
+        workspaces={userWorkspaces}
+        activeWorkspaceId={selectedWsId}
+        projects={projectList}
+      />
 
       <main className={styles.main}>
         {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}

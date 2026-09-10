@@ -5,6 +5,16 @@ import { getOrCreateDefaultWorkspace, healOrphanProjects } from "@/lib/workspace
 
 export { getSafeNextPath };
 
+function getPublicOrigin(request: NextRequest): string {
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  if (forwardedHost) {
+    const proto = forwardedProto || (forwardedHost.includes("localhost") ? "http" : "https");
+    return `${proto}://${forwardedHost}`;
+  }
+  return new URL(request.url).origin;
+}
+
 /**
  * GET /auth/callback
  *
@@ -18,14 +28,16 @@ export async function GET(request: NextRequest) {
   const errorParam = requestUrl.searchParams.get("error");
   const errorDesc = requestUrl.searchParams.get("error_description");
 
-  const safeNext = nextParam ? getSafeNextPath(nextParam, "/dashboard") : getSafeNextPath(null, "/reset-password");
-  const fallbackUrl = safeNext.startsWith("/reset-password") ? "/forgot-password" : "/login";
+  const origin = getPublicOrigin(request);
+  const isResetFlow = Boolean(nextParam && nextParam.startsWith("/reset-password"));
+  const fallbackUrl = isResetFlow ? "/forgot-password" : "/login";
+  const safeNext = nextParam ? getSafeNextPath(nextParam, "/onboarding") : "/onboarding";
 
   // 1. Handle error parameters returned directly from Supabase Auth
   if (errorParam || errorDesc) {
     const message = errorDesc || errorParam || "Authentication failed or link expired.";
     return NextResponse.redirect(
-      new URL(`${fallbackUrl}?error=${encodeURIComponent(message)}`, request.url)
+      new URL(`${fallbackUrl}?error=${encodeURIComponent(message)}`, origin)
     );
   }
 
@@ -33,8 +45,8 @@ export async function GET(request: NextRequest) {
   if (!code) {
     return NextResponse.redirect(
       new URL(
-        `${fallbackUrl}?error=${encodeURIComponent("Missing authentication code. Please request a new link.")}`,
-        request.url
+        `${fallbackUrl}?error=${encodeURIComponent("Missing authentication code. Please sign in again.")}`,
+        origin
       )
     );
   }
@@ -48,9 +60,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       new URL(
         `${fallbackUrl}?error=${encodeURIComponent(
-          "Invalid or expired recovery link. Please request a new one."
+          "Invalid or expired authentication link. Please sign in again."
         )}`,
-        request.url
+        origin
       )
     );
   }
@@ -66,11 +78,44 @@ export async function GET(request: NextRequest) {
         user.user_metadata?.full_name || user.user_metadata?.name
       );
       await healOrphanProjects(supabase, user.id, ws.id);
+
+      // If user came from password reset or invitation, respect explicit destination
+      if (safeNext.startsWith("/reset-password") || safeNext.startsWith("/invite")) {
+        return NextResponse.redirect(new URL(safeNext, origin));
+      }
+
+      // Check if user has completed onboarding (has at least 1 website/project)
+      const { data: userProjects } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("workspace_id", ws.id)
+        .order("created_at", { ascending: true })
+        .limit(1);
+
+      if (!userProjects || userProjects.length === 0) {
+        return NextResponse.redirect(new URL("/onboarding", origin));
+      }
+
+      // Check if workspace has an active subscription or 14-day trial
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("id, status")
+        .eq("workspace_id", ws.id)
+        .maybeSingle();
+
+      if (!subscription) {
+        return NextResponse.redirect(new URL("/planning", origin));
+      }
+
+      // Both onboarding and plan/trial are completed -> redirect to website Overview
+      return NextResponse.redirect(
+        new URL(`/dashboard/projects/${userProjects[0].id}`, origin)
+      );
     }
   } catch (wsErr) {
     console.error("[auth/callback] Workspace provisioning error:", wsErr);
   }
 
-  // 5. Code exchange succeeded — redirect to the validated internal path with active session cookies
-  return NextResponse.redirect(new URL(safeNext, request.url));
+  // 5. Code exchange succeeded — fallback redirect
+  return NextResponse.redirect(new URL(safeNext, origin));
 }

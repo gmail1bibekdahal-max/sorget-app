@@ -34,15 +34,36 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Root route: app entry point strictly redirects based on auth status
+  // 1. Intercept OAuth PKCE code parameter landing on /, /login, or /signup and forward immediately to /auth/callback
+  const codeParam = request.nextUrl.searchParams.get("code");
+  if (codeParam && (pathname.startsWith("/login") || pathname.startsWith("/signup") || pathname === "/")) {
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const forwardedProto = request.headers.get("x-forwarded-proto");
+    const origin = forwardedHost
+      ? `${forwardedProto || (forwardedHost.includes("localhost") ? "http" : "https")}://${forwardedHost}`
+      : request.nextUrl.origin;
+
+    const callbackUrl = new URL("/auth/callback", origin);
+    callbackUrl.searchParams.set("code", codeParam);
+    const nextVal = request.nextUrl.searchParams.get("next") || "/onboarding";
+    callbackUrl.searchParams.set("next", nextVal);
+
+    const redirectResponse = NextResponse.redirect(callbackUrl);
+    supabaseResponse.cookies.getAll().forEach(({ name, value, ...options }) => {
+      redirectResponse.cookies.set(name, value, options);
+    });
+    return redirectResponse;
+  }
+
+  // 2. Root route: app entry point strictly redirects based on auth status
   if (pathname === "/") {
     const targetUrl = request.nextUrl.clone();
     targetUrl.pathname = user ? "/dashboard" : "/login";
     return NextResponse.redirect(targetUrl);
   }
 
-  // Protected routes: redirect unauthenticated users to /login
-  const protectedPaths = ["/dashboard", "/onboarding"];
+  // 3. Protected routes: redirect unauthenticated users to /login
+  const protectedPaths = ["/dashboard", "/onboarding", "/planning"];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
 
   if (isProtected && !user) {
@@ -51,7 +72,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Auth routes: redirect authenticated users away from /login and /signup
+  // 4. Auth routes: redirect authenticated users away from /login and /signup
   const authPaths = ["/login", "/signup"];
   const isAuthPage = authPaths.some((p) => pathname.startsWith(p));
 
