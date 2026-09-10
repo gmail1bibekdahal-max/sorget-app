@@ -85,8 +85,8 @@ describe("Phase 9: HubSpot Attribution Property Provisioning", () => {
     assert.equal(result.created.length, 11, "Should create 11 properties");
     assert.equal(result.existing.length, 0, "Should find 0 existing");
     assert.equal(createdNames.length, 11, "Must make 11 POST requests");
-    assert.ok(createdNames.includes("attributer_channel"));
-    assert.ok(createdNames.includes("attributer_term"));
+    assert.ok(createdNames.includes("sorget_channel"));
+    assert.ok(createdNames.includes("sorget_term"));
   });
 
   test("3. 5 exist, 6 missing → creates exactly 6", async () => {
@@ -214,9 +214,9 @@ describe("Phase 9: HubSpot Attribution Property Provisioning", () => {
               message: "Property values were not valid",
               errors: [
                 {
-                  message: 'Property "attributer_channel" does not exist',
+                  message: 'Property "sorget_channel" does not exist',
                   code: "PROPERTY_DOESNT_EXIST",
-                  context: { propertyName: ["attributer_channel"] },
+                  context: { propertyName: ["sorget_channel"] },
                 },
               ],
             }),
@@ -235,7 +235,7 @@ describe("Phase 9: HubSpot Attribution Property Provisioning", () => {
 
     const properties = {
       email: "recovery@example.com",
-      attributer_channel: "Paid Search",
+      sorget_channel: "Paid Search",
       firstname: "Recovered",
     };
 

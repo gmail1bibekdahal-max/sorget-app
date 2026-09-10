@@ -344,17 +344,17 @@ describe("Phase 7: HubSpot Integration Verification", () => {
     const properties = buildHubSpotProperties(lead);
 
     // 7. Verify all 11 required attribution properties:
-    assert.equal(properties.attributer_channel, "Paid Search");
-    assert.equal(properties.attributer_drilldown1, "google");
-    assert.equal(properties.attributer_drilldown2, "summer");
-    assert.equal(properties.attributer_drilldown3, "ad1");
-    assert.equal(properties.attributer_landing_page, "/real-site/index.html");
-    assert.equal(properties.attributer_landing_page_group, "/real-site");
-    assert.equal(properties.attributer_source, "google");
-    assert.equal(properties.attributer_medium, "cpc");
-    assert.equal(properties.attributer_campaign, "summer");
-    assert.equal(properties.attributer_content, "ad1");
-    assert.equal(properties.attributer_term, "crm");
+    assert.equal(properties.sorget_channel, "Paid Search");
+    assert.equal(properties.sorget_drilldown1, "google");
+    assert.equal(properties.sorget_drilldown2, "summer");
+    assert.equal(properties.sorget_drilldown3, "ad1");
+    assert.equal(properties.sorget_landing_page, "/real-site/index.html");
+    assert.equal(properties.sorget_landing_page_group, "/real-site");
+    assert.equal(properties.sorget_source, "google");
+    assert.equal(properties.sorget_medium, "cpc");
+    assert.equal(properties.sorget_campaign, "summer");
+    assert.equal(properties.sorget_content, "ad1");
+    assert.equal(properties.sorget_term, "crm");
 
     // Standard contact identity fields
     assert.equal(properties.email, "lead.browser@example.com");

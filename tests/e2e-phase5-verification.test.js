@@ -231,12 +231,12 @@ describe("Phase 5 — End-to-End Functional Verification", () => {
     assert.equal(hubspotProps.email, "jane.doe@example.com");
     assert.equal(hubspotProps.firstname, "Jane");
     assert.equal(hubspotProps.lastname, "Doe");
-    assert.equal(hubspotProps.attributer_channel, "Paid Search");
-    assert.equal(hubspotProps.attributer_drilldown1, "google");
-    assert.equal(hubspotProps.attributer_drilldown2, "test_campaign");
-    assert.equal(hubspotProps.attributer_drilldown3, "test_ad");
-    assert.equal(hubspotProps.attributer_landing_page, "/pricing");
-    assert.equal(hubspotProps.attributer_landing_page_group, "/pricing");
+    assert.equal(hubspotProps.sorget_channel, "Paid Search");
+    assert.equal(hubspotProps.sorget_drilldown1, "google");
+    assert.equal(hubspotProps.sorget_drilldown2, "test_campaign");
+    assert.equal(hubspotProps.sorget_drilldown3, "test_ad");
+    assert.equal(hubspotProps.sorget_landing_page, "/pricing");
+    assert.equal(hubspotProps.sorget_landing_page_group, "/pricing");
 
     // Test triggerHubSpotSync with active connection
     const loggedEntries = [];
@@ -305,8 +305,8 @@ describe("Phase 5 — End-to-End Functional Verification", () => {
 
       assert.equal(syncResult.success, true);
       assert.equal(syncResult.external_contact_id, "hs_contact_12345");
-      assert.equal(hubspotApiPayload.properties.attributer_channel, "Paid Search");
-      assert.equal(hubspotApiPayload.properties.attributer_drilldown1, "google");
+      assert.equal(hubspotApiPayload.properties.sorget_channel, "Paid Search");
+      assert.equal(hubspotApiPayload.properties.sorget_drilldown1, "google");
 
       // Verify crm_sync_log recorded
       assert.equal(loggedEntries.length, 1);

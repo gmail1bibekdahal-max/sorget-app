@@ -6,88 +6,88 @@
 
 export const REQUIRED_ATTRIBUTION_PROPERTIES = [
   {
-    name: "attributer_channel",
-    label: "Attributer Channel",
+    name: "sorget_channel",
+    label: "Channel",
     description: "Sorget marketing attribution data.",
     groupName: "contactinformation",
     type: "string",
     fieldType: "text",
   },
   {
-    name: "attributer_drilldown1",
-    label: "Attributer Drilldown 1",
+    name: "sorget_drilldown1",
+    label: "Drilldown 1",
     description: "Sorget marketing attribution data.",
     groupName: "contactinformation",
     type: "string",
     fieldType: "text",
   },
   {
-    name: "attributer_drilldown2",
-    label: "Attributer Drilldown 2",
+    name: "sorget_drilldown2",
+    label: "Drilldown 2",
     description: "Sorget marketing attribution data.",
     groupName: "contactinformation",
     type: "string",
     fieldType: "text",
   },
   {
-    name: "attributer_drilldown3",
-    label: "Attributer Drilldown 3",
+    name: "sorget_drilldown3",
+    label: "Drilldown 3",
     description: "Sorget marketing attribution data.",
     groupName: "contactinformation",
     type: "string",
     fieldType: "text",
   },
   {
-    name: "attributer_landing_page",
-    label: "Attributer Landing Page",
+    name: "sorget_landing_page",
+    label: "Landing Page",
     description: "Sorget marketing attribution data.",
     groupName: "contactinformation",
     type: "string",
     fieldType: "text",
   },
   {
-    name: "attributer_landing_page_group",
-    label: "Attributer Landing Page Group",
+    name: "sorget_landing_page_group",
+    label: "Landing Page Group",
     description: "Sorget marketing attribution data.",
     groupName: "contactinformation",
     type: "string",
     fieldType: "text",
   },
   {
-    name: "attributer_source",
-    label: "Attributer Source",
+    name: "sorget_source",
+    label: "Source",
     description: "Sorget marketing attribution data.",
     groupName: "contactinformation",
     type: "string",
     fieldType: "text",
   },
   {
-    name: "attributer_medium",
-    label: "Attributer Medium",
+    name: "sorget_medium",
+    label: "Medium",
     description: "Sorget marketing attribution data.",
     groupName: "contactinformation",
     type: "string",
     fieldType: "text",
   },
   {
-    name: "attributer_campaign",
-    label: "Attributer Campaign",
+    name: "sorget_campaign",
+    label: "Campaign",
     description: "Sorget marketing attribution data.",
     groupName: "contactinformation",
     type: "string",
     fieldType: "text",
   },
   {
-    name: "attributer_content",
-    label: "Attributer Content",
+    name: "sorget_content",
+    label: "Content",
     description: "Sorget marketing attribution data.",
     groupName: "contactinformation",
     type: "string",
     fieldType: "text",
   },
   {
-    name: "attributer_term",
-    label: "Attributer Term",
+    name: "sorget_term",
+    label: "Term",
     description: "Sorget marketing attribution data.",
     groupName: "contactinformation",
     type: "string",
@@ -115,7 +115,7 @@ export async function ensureHubSpotAttributionProperties(accessToken) {
   }
 
   try {
-    // 1. Fetch current contact properties from HubSpot
+    // 1. Fetch current contact properties from HubSpot (Discovery)
     const listRes = await fetch("https://api.hubapi.com/crm/v3/properties/contacts", {
       method: "GET",
       headers: {
@@ -127,6 +127,7 @@ export async function ensureHubSpotAttributionProperties(accessToken) {
     if (!listRes.ok) {
       const errData = await listRes.json().catch(() => ({}));
       const errMsg = errData.message || `Failed to fetch contact properties (HTTP ${listRes.status})`;
+      console.error(`[hubspot-properties] Discovery failed: HTTP ${listRes.status}, reason: ${errMsg}`);
       result.error = errMsg;
       result.failed = REQUIRED_ATTRIBUTION_PROPERTIES.map((p) => ({
         name: p.name,
@@ -147,6 +148,10 @@ export async function ensureHubSpotAttributionProperties(accessToken) {
         toCreate.push(prop);
       }
     }
+
+    console.log(
+      `[hubspot-properties] Discovery complete: ${result.existing.length} verified existing, ${toCreate.length} to create`
+    );
 
     // If all exist, return immediately (fast path, zero mutations)
     if (toCreate.length === 0) {
@@ -174,17 +179,22 @@ export async function ensureHubSpotAttributionProperties(accessToken) {
 
         if (createRes.ok) {
           result.created.push(prop.name);
+          console.log(`[hubspot-properties] Property created: ${prop.name} (HTTP ${createRes.status})`);
         } else if (createRes.status === 409) {
           // Idempotency: concurrent creation conflict — property was already created
           result.existing.push(prop.name);
+          console.log(`[hubspot-properties] Property already exists (409 conflict): ${prop.name}`);
         } else {
           const errBody = await createRes.json().catch(() => ({}));
+          const errMsg = errBody.message || `HTTP ${createRes.status}`;
+          console.error(`[hubspot-properties] Property creation failed for ${prop.name}: HTTP ${createRes.status}, reason: ${errMsg}`);
           result.failed.push({
             name: prop.name,
-            error: errBody.message || `HTTP ${createRes.status}`,
+            error: errMsg,
           });
         }
       } catch (postErr) {
+        console.error(`[hubspot-properties] Network error creating ${prop.name}: ${postErr.message}`);
         result.failed.push({
           name: prop.name,
           error: postErr.message || "Network error during property creation",
@@ -194,6 +204,7 @@ export async function ensureHubSpotAttributionProperties(accessToken) {
 
     return result;
   } catch (err) {
+    console.error(`[hubspot-properties] Unexpected error: ${err.message}`);
     result.error = err.message || "Unexpected error in ensureHubSpotAttributionProperties";
     return result;
   }

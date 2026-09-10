@@ -270,7 +270,7 @@ async function run() {
   let hubspotContactStatus = 0;
   if (connection?.access_token) {
     const hsRes = await fetch(
-      `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(testEmail)}?idProperty=email&properties=email,firstname,lastname,attributer_channel,attributer_drilldown1,attributer_drilldown2,attributer_drilldown3,attributer_landing_page,attributer_landing_page_group,attributer_source,attributer_medium,attributer_campaign,attributer_content,attributer_term`,
+      `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(testEmail)}?idProperty=email&properties=email,firstname,lastname,sorget_channel,sorget_drilldown1,sorget_drilldown2,sorget_drilldown3,sorget_landing_page,sorget_landing_page_group,sorget_source,sorget_medium,sorget_campaign,sorget_content,sorget_term`,
       {
         headers: { Authorization: `Bearer ${connection.access_token}` },
       }
@@ -293,17 +293,17 @@ async function run() {
   if (hubspotContact) {
     const p = hubspotContact.properties;
     results.test3All11Props = Boolean(
-      p.attributer_channel &&
-      p.attributer_drilldown1 &&
-      p.attributer_drilldown2 &&
-      p.attributer_drilldown3 &&
-      p.attributer_landing_page &&
-      p.attributer_landing_page_group &&
-      p.attributer_source &&
-      p.attributer_medium &&
-      p.attributer_campaign &&
-      p.attributer_content &&
-      p.attributer_term
+      p.sorget_channel &&
+      p.sorget_drilldown1 &&
+      p.sorget_drilldown2 &&
+      p.sorget_drilldown3 &&
+      p.sorget_landing_page &&
+      p.sorget_landing_page_group &&
+      p.sorget_source &&
+      p.sorget_medium &&
+      p.sorget_campaign &&
+      p.sorget_content &&
+      p.sorget_term
     );
   }
 

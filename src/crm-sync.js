@@ -4,6 +4,56 @@
  */
 
 import { buildHubSpotProperties, isTokenExpired } from "./crm.js";
+import { REQUIRED_ATTRIBUTION_PROPERTIES } from "./hubspot-properties.js";
+
+const VALID_ATTRIBUTION_PROPERTIES = new Set(
+  REQUIRED_ATTRIBUTION_PROPERTIES.map((p) => p.name)
+);
+
+const STANDARD_HUBSPOT_PROPERTIES = new Set([
+  "email",
+  "firstname",
+  "lastname",
+  "phone",
+  "company",
+  "website",
+  "address",
+  "city",
+  "state",
+  "zip",
+  "lifecyclestage",
+  "jobtitle",
+]);
+
+/**
+ * Sanitizes properties before sending to HubSpot CRM.
+ * - Excludes undefined, null, and empty string values.
+ * - Only includes valid standard contact fields and provisioned Sorget attribution properties.
+ */
+export function sanitizeHubSpotProperties(properties) {
+  const clean = {};
+  if (!properties || typeof properties !== "object") return clean;
+
+  for (const [key, val] of Object.entries(properties)) {
+    if (val === undefined || val === null) continue;
+    const strVal = String(val).trim();
+    if (strVal === "") continue;
+
+    if (
+      STANDARD_HUBSPOT_PROPERTIES.has(key) ||
+      VALID_ATTRIBUTION_PROPERTIES.has(key)
+    ) {
+      clean[key] = strVal;
+    }
+  }
+
+  // Ensure email is always present if provided
+  if (properties.email && !clean.email) {
+    clean.email = String(properties.email).trim();
+  }
+
+  return clean;
+}
 
 /**
  * Push a lead to HubSpot via REST API (server-side only).
@@ -11,19 +61,22 @@ import { buildHubSpotProperties, isTokenExpired } from "./crm.js";
  */
 export async function syncLeadToHubSpot(accessToken, properties, retried = false) {
   try {
+    const payload = sanitizeHubSpotProperties(properties);
+
     const res = await fetch("https://api.hubapi.com/crm/v3/objects/contacts", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ properties }),
+      body: JSON.stringify({ properties: payload }),
     });
 
     if (res.status === 409) {
       // Contact already exists — try PATCH by email
-      const email = properties.email;
+      const email = payload.email || properties.email;
       if (email) {
+        console.log(`[crm-sync] Contact already exists (409 Conflict), falling back to PATCH for email=${email}`);
         let patchRes = await fetch(
           `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(email)}?idProperty=email`,
           {
@@ -32,88 +85,94 @@ export async function syncLeadToHubSpot(accessToken, properties, retried = false
               Authorization: `Bearer ${accessToken}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ properties }),
+            body: JSON.stringify({ properties: payload }),
           }
         );
         let patchData = await patchRes.json().catch(() => ({}));
 
         // If PATCH fails because a custom property is missing from HubSpot portal schema
-        if (patchRes.status === 400 && Array.isArray(patchData.errors) && patchData.errors.some(e => e.code === "PROPERTY_DOESNT_EXIST")) {
+        if (
+          patchRes.status === 400 &&
+          Array.isArray(patchData.errors) &&
+          patchData.errors.some((e) => e.code === "PROPERTY_DOESNT_EXIST")
+        ) {
           if (!retried) {
             try {
+              console.log("[crm-sync] Missing custom property during PATCH; triggering automatic property provisioning");
               const { ensureHubSpotAttributionProperties } = await import("./hubspot-properties.js");
               const provResult = await ensureHubSpotAttributionProperties(accessToken);
-              if (provResult?.created?.length > 0) {
+              if (provResult?.created?.length > 0 || (provResult?.existing?.length > 0 && !provResult?.error)) {
                 // Retry PATCH once with all properties now provisioned
                 return syncLeadToHubSpot(accessToken, properties, true);
               }
-            } catch {}
-          }
-          // Fall back to stripping unconfigured properties so standard fields update
-          const invalidProps = new Set();
-          for (const err of patchData.errors) {
-            if (err.code === "PROPERTY_DOESNT_EXIST") {
-              const names = err.context?.propertyName || err.context?.name || [];
-              names.forEach(n => invalidProps.add(n));
-              if (err.name) invalidProps.add(err.name);
+            } catch (provErr) {
+              console.error("[crm-sync] Property provisioning retry error on PATCH:", provErr.message);
             }
           }
-          if (invalidProps.size > 0) {
-            const safeProps = { ...properties };
-            for (const p of invalidProps) delete safeProps[p];
-            patchRes = await fetch(
-              `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(email)}?idProperty=email`,
-              {
-                method: "PATCH",
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ properties: safeProps }),
-              }
-            );
-            patchData = await patchRes.json().catch(() => ({}));
-          }
+
+          // Do NOT silently strip properties to fake success. Report actual failure.
+          const missing = patchData.errors
+            .filter((e) => e.code === "PROPERTY_DOESNT_EXIST")
+            .map((e) => (e.context?.propertyName || [e.name || "unknown"]).join(", "))
+            .join("; ");
+          const errMsg = `HubSpot contact update: FAILED - Property does not exist (${missing})`;
+          console.error(`[crm-sync] ${errMsg}`);
+          return { success: false, error: errMsg };
         }
 
-        if (patchRes.ok) return { success: true, external_contact_id: patchData.id };
-        return { success: false, error: patchData.message || "HubSpot PATCH error" };
+        if (patchRes.ok) {
+          console.log(`[crm-sync] Contact updated successfully via PATCH: id=${patchData.id}`);
+          return { success: true, external_contact_id: patchData.id };
+        }
+
+        const patchErrMsg = patchData.message || `HubSpot PATCH error (HTTP ${patchRes.status})`;
+        console.error(`[crm-sync] Contact update failed: ${patchErrMsg}`);
+        return { success: false, error: patchErrMsg };
       }
     }
 
     const data = await res.json().catch(() => ({}));
 
     // If POST fails because a custom property is missing from HubSpot portal schema
-    if (res.status === 400 && Array.isArray(data.errors) && data.errors.some(e => e.code === "PROPERTY_DOESNT_EXIST")) {
+    if (
+      res.status === 400 &&
+      Array.isArray(data.errors) &&
+      data.errors.some((e) => e.code === "PROPERTY_DOESNT_EXIST")
+    ) {
       if (!retried) {
         try {
+          console.log("[crm-sync] Missing custom property during POST; triggering automatic property provisioning");
           const { ensureHubSpotAttributionProperties } = await import("./hubspot-properties.js");
           const provResult = await ensureHubSpotAttributionProperties(accessToken);
-          if (provResult?.created?.length > 0) {
+          if (provResult?.created?.length > 0 || (provResult?.existing?.length > 0 && !provResult?.error)) {
             // Retry POST once with all properties now provisioned
             return syncLeadToHubSpot(accessToken, properties, true);
           }
-        } catch {}
-      }
-      // Fallback: strip invalid properties so contact is still created
-      const invalidProps = new Set();
-      for (const err of data.errors) {
-        if (err.code === "PROPERTY_DOESNT_EXIST") {
-          const names = err.context?.propertyName || err.context?.name || [];
-          names.forEach(n => invalidProps.add(n));
-          if (err.name) invalidProps.add(err.name);
+        } catch (provErr) {
+          console.error("[crm-sync] Property provisioning retry error on POST:", provErr.message);
         }
       }
-      if (invalidProps.size > 0) {
-        const safeProps = { ...properties };
-        for (const p of invalidProps) delete safeProps[p];
-        return syncLeadToHubSpot(accessToken, safeProps, true);
-      }
+
+      // Do NOT silently strip properties to fake success. Report actual failure.
+      const missing = data.errors
+        .filter((e) => e.code === "PROPERTY_DOESNT_EXIST")
+        .map((e) => (e.context?.propertyName || [e.name || "unknown"]).join(", "))
+        .join("; ");
+      const errMsg = `HubSpot contact sync: FAILED - Property does not exist (${missing})`;
+      console.error(`[crm-sync] ${errMsg}`);
+      return { success: false, error: errMsg };
     }
 
-    if (!res.ok) return { success: false, error: data.message || "HubSpot API error" };
+    if (!res.ok) {
+      const errMsg = data.message || `HubSpot API error (HTTP ${res.status})`;
+      console.error(`[crm-sync] Contact creation failed: ${errMsg}`);
+      return { success: false, error: errMsg };
+    }
+
+    console.log(`[crm-sync] Contact created successfully: id=${data.id}`);
     return { success: true, external_contact_id: data.id };
   } catch (err) {
+    console.error(`[crm-sync] Unexpected error during syncLeadToHubSpot: ${err.message}`);
     return { success: false, error: err.message };
   }
 }
@@ -189,6 +248,7 @@ export async function refreshHubSpotToken(connection, supabase) {
  * - Resolves the workspace for the lead/project
  * - Checks for an active HubSpot connection
  * - Handles expired tokens
+ * - Preserves immutable first-touch attribution across recurring submissions
  * - Updates or creates HubSpot contact with full attribution data
  * - Records sync status in crm_sync_log
  * - Completely non-blocking: lead data in Supabase is never affected if HubSpot fails.
@@ -254,11 +314,12 @@ export async function triggerHubSpotSync(lead, project, supabase, options = {}) 
         await supabase.from("crm_sync_log").insert([
           {
             workspace_id: workspaceId,
+            project_id: project?.id || null,
             lead_id: lead.id || null,
             provider: "hubspot",
             direction: "push",
             status: "error",
-            error_message: errorMsg,
+            error_message: `HubSpot contact sync: FAILED - Reason: ${errorMsg}`,
           },
         ]);
         return { success: false, error: errorMsg };
@@ -268,32 +329,78 @@ export async function triggerHubSpotSync(lead, project, supabase, options = {}) 
     // 4. Build HubSpot properties with attribution mapping
     const properties = buildHubSpotProperties(lead);
 
+    // 4b. First-touch immutability: check if an earlier lead exists in Supabase for this email
+    if (supabase && lead.email) {
+      try {
+        let query = supabase
+          .from("leads")
+          .select("channel, source, medium, campaign, content, term, drilldown1, drilldown2, drilldown3, landing_page, landing_page_group, created_at")
+          .eq("email", lead.email);
+
+        if (lead.id) {
+          query = query.neq("id", lead.id);
+        }
+
+        const { data: priorLeads } = await query
+          .order("created_at", { ascending: true })
+          .limit(1);
+
+        if (priorLeads && priorLeads.length > 0) {
+          const firstLead = priorLeads[0];
+          const firstTouchProps = buildHubSpotProperties(firstLead);
+          for (const [k, v] of Object.entries(firstTouchProps)) {
+            if ((k.startsWith("sorget_") || k.startsWith("attributer_")) && v) {
+              properties[k] = v; // Guarantee original first-touch attribution remains immutable
+            }
+          }
+        }
+      } catch (e) {
+        // Non-blocking query fallback
+      }
+    }
+
     // 5. Send to HubSpot API (syncLeadToHubSpot handles 409 conflict with PATCH fallback)
     const result = await syncLeadToHubSpot(accessToken, properties);
 
-    // 6. Record result in crm_sync_log
+    const attributionFieldsAttempted = Object.keys(properties).filter(
+      (k) => k.startsWith("sorget_") || k.startsWith("attributer_")
+    );
+
+    // 6. Record result in crm_sync_log & log observability event
     if (result.success) {
       await supabase.from("crm_sync_log").insert([
         {
           workspace_id: workspaceId,
+          project_id: project?.id || null,
           lead_id: lead.id || null,
           provider: "hubspot",
           direction: "push",
           status: "success",
           external_contact_id: result.external_contact_id || null,
+          error_message: null,
         },
       ]);
+
+      console.log(
+        `[crm-sync] Contact sync: SUCCESS | leadId=${lead.id || "n/a"} | projectId=${project?.id || "n/a"} | portalId=${connection.portal_id || "n/a"} | contactId=${result.external_contact_id} | fields=[${attributionFieldsAttempted.join(", ")}]`
+      );
     } else {
+      const safeErrorReason = result.error || "HubSpot API error";
       await supabase.from("crm_sync_log").insert([
         {
           workspace_id: workspaceId,
+          project_id: project?.id || null,
           lead_id: lead.id || null,
           provider: "hubspot",
           direction: "push",
           status: "error",
-          error_message: result.error || "HubSpot API error",
+          error_message: `HubSpot contact sync: FAILED - Reason: ${safeErrorReason}`,
         },
       ]);
+
+      console.error(
+        `[crm-sync] Contact sync: FAILED | leadId=${lead.id || "n/a"} | projectId=${project?.id || "n/a"} | portalId=${connection.portal_id || "n/a"} | fields=[${attributionFieldsAttempted.join(", ")}] | reason=${safeErrorReason}`
+      );
     }
 
     return result;
@@ -302,3 +409,4 @@ export async function triggerHubSpotSync(lead, project, supabase, options = {}) 
     return { success: false, error: err.message };
   }
 }
+

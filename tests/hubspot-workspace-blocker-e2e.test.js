@@ -349,14 +349,14 @@ describe("HubSpot Connection & Workspace Integration End-to-End Test Suite", () 
     assert.strictEqual(props.email, "jane@company.com");
     assert.strictEqual(props.firstname, "Jane");
     assert.strictEqual(props.lastname, "Smith");
-    assert.strictEqual(props.attributer_channel, "Paid Search");
-    assert.strictEqual(props.attributer_drilldown1, "Google");
-    assert.strictEqual(props.attributer_drilldown2, "Search Campaign");
-    assert.strictEqual(props.attributer_drilldown3, "Keyword CRM");
-    assert.strictEqual(props.attributer_landing_page, "https://bibek1.com/pricing");
-    assert.strictEqual(props.attributer_source, "google");
-    assert.strictEqual(props.attributer_medium, "cpc");
-    assert.strictEqual(props.attributer_campaign, "summer_sale");
+    assert.strictEqual(props.sorget_channel, "Paid Search");
+    assert.strictEqual(props.sorget_drilldown1, "Google");
+    assert.strictEqual(props.sorget_drilldown2, "Search Campaign");
+    assert.strictEqual(props.sorget_drilldown3, "Keyword CRM");
+    assert.strictEqual(props.sorget_landing_page, "https://bibek1.com/pricing");
+    assert.strictEqual(props.sorget_source, "google");
+    assert.strictEqual(props.sorget_medium, "cpc");
+    assert.strictEqual(props.sorget_campaign, "summer_sale");
 
     // 15: Verify crm_sync_log
     const log = mockSupabase._syncLogs.find((l) => l.lead_id === "lead-123");

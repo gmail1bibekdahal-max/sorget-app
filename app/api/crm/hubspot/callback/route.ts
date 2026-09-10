@@ -144,13 +144,54 @@ export async function GET(req: NextRequest) {
       const { ensureHubSpotAttributionProperties } = await import("@/lib/hubspot-properties");
       const provResult = await ensureHubSpotAttributionProperties(tokens.access_token);
       console.log("[hubspot/callback] Property provisioning result:", {
+        portalId,
         created: provResult.created.length,
         existing: provResult.existing.length,
         failed: provResult.failed.length,
       });
+
+      if (provResult.failed.length === 0 && !provResult.error) {
+        await adminClient.from("crm_sync_log").insert([
+          {
+            workspace_id: workspaceId,
+            project_id: projectId || null,
+            lead_id: null,
+            provider: "hubspot",
+            direction: "push",
+            status: "success",
+            error_message: null,
+          },
+        ]);
+        console.log(`[hubspot/callback] HubSpot property provisioning: SUCCESS (${provResult.existing.length} existing, ${provResult.created.length} created)`);
+      } else {
+        const failReasons = provResult.failed.map((f) => `${f.name}: ${f.error}`).join("; ") || provResult.error || "Property creation rejected";
+        await adminClient.from("crm_sync_log").insert([
+          {
+            workspace_id: workspaceId,
+            project_id: projectId || null,
+            lead_id: null,
+            provider: "hubspot",
+            direction: "push",
+            status: "error",
+            error_message: `HubSpot property provisioning: FAILED - Reason: ${failReasons}`,
+          },
+        ]);
+        console.error(`[hubspot/callback] HubSpot property provisioning: FAILED - ${failReasons}`);
+      }
     } catch (provErr: any) {
       // Non-blocking: transient provisioning failure must not fail the entire OAuth callback
       console.error("[hubspot/callback] Property provisioning warning:", provErr.message);
+      await adminClient.from("crm_sync_log").insert([
+        {
+          workspace_id: workspaceId,
+          project_id: projectId || null,
+          lead_id: null,
+          provider: "hubspot",
+          direction: "push",
+          status: "error",
+          error_message: `HubSpot property provisioning: FAILED - Reason: ${provErr.message}`,
+        },
+      ]);
     }
 
     return NextResponse.redirect(
