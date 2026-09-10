@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { createOnboardingProject } from "@/app/actions/projects";
+import SubmitButton from "@/app/components/SubmitButton";
 import styles from "../Auth.module.css";
 
 interface PageProps {
@@ -112,9 +113,9 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
               </select>
             </div>
 
-            <button id="onboarding-submit" type="submit" className={styles.btnPrimary}>
+            <SubmitButton id="onboarding-submit" className={styles.btnPrimary} pendingText="Saving...">
               Continue
-            </button>
+            </SubmitButton>
           </form>
         </div>
       </div>

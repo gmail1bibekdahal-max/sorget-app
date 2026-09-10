@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { signup } from "@/app/actions/auth";
 import GoogleSignInButton from "@/app/components/GoogleSignInButton";
+import SubmitButton from "@/app/components/SubmitButton";
 import styles from "../Auth.module.css";
 
 interface PageProps {
@@ -65,7 +66,7 @@ export default async function SignupPage({ searchParams }: PageProps) {
                   <label className={styles.label} htmlFor="signup-password">Password</label>
                   <input id="signup-password" name="password" type="password" placeholder="Minimum 6 characters" required minLength={6} autoComplete="new-password" className={styles.input} />
                 </div>
-                <button id="signup-submit" type="submit" className={styles.btnPrimary}>Create Account</button>
+                <SubmitButton id="signup-submit" className={styles.btnPrimary} pendingText="Creating Account...">Create Account</SubmitButton>
               </form>
             </>
           )}

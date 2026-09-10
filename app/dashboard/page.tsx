@@ -65,25 +65,29 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) redirect("/login");
 
-  const { data: memberRows } = await supabase
-    .from("workspace_members")
-    .select("role, workspaces(id, name, slug)")
-    .eq("user_id", user.id);
+  const [
+    { data: memberRows },
+    { data: projects, error: projectsError },
+    { data: leads, error: leadsError },
+  ] = await Promise.all([
+    supabase
+      .from("workspace_members")
+      .select("role, workspaces(id, name, slug)")
+      .eq("user_id", user.id),
+    supabase
+      .from("projects")
+      .select("id, name, website, tracking_id, created_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("leads")
+      .select("id, name, email, channel, source, medium, gclid, created_at, project_id")
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
 
   const userWorkspaces = (memberRows ?? [])
     .filter((r: any) => r.workspaces)
     .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
-
-  const { data: projects, error: projectsError } = await supabase
-    .from("projects")
-    .select("id, name, website, tracking_id, created_at")
-    .order("created_at", { ascending: false });
-
-  const { data: leads, error: leadsError } = await supabase
-    .from("leads")
-    .select("id, name, email, channel, source, medium, gclid, created_at, project_id")
-    .order("created_at", { ascending: false })
-    .limit(50);
 
   const projectList: Project[] = (projects ?? []).map((p) => ({
     ...p,

@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { login } from "@/app/actions/auth";
 import GoogleSignInButton from "@/app/components/GoogleSignInButton";
+import SubmitButton from "@/app/components/SubmitButton";
 import styles from "../Auth.module.css";
 
 interface PageProps {
@@ -58,7 +59,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
               <input id="login-password" name="password" type="password" placeholder="Your password" required autoComplete="current-password" className={styles.input} />
             </div>
 
-            <button id="login-submit" type="submit" className={styles.btnPrimary}>Sign In</button>
+            <SubmitButton id="login-submit" className={styles.btnPrimary} pendingText="Signing in...">Sign In</SubmitButton>
           </form>
 
           <div className={styles.footer}>

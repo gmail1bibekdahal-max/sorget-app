@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { PLANS } from "@/lib/billing";
 import { activateFreeTrial } from "@/app/actions/billing";
 import { getPaddlePriceId, getPaddleConfig } from "@/lib/paddle";
+import SubmitButton from "@/app/components/SubmitButton";
+import PaddlePlaceholderButton from "@/app/components/PaddlePlaceholderButton";
 import styles from "../checkout/Checkout.module.css";
 
 interface PageProps {
@@ -144,21 +146,19 @@ export default async function SelectedPlanPage({ params }: PageProps) {
             <>
               {/* Paddle Payment Action (Sandbox configured) */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <a
-                  href={`#paddle-checkout-${planKey}`}
-                  className={styles.btnPrimary}
+                <PaddlePlaceholderButton
                   id="btn-paddle-checkout"
+                  className={styles.btnPrimary}
                   style={{
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
                     textDecoration: "none",
                     background: "#3A313C",
+                    cursor: "pointer",
                   }}
                   title={`Paddle Price ID: ${paddlePriceId || "sandbox"}`}
-                >
-                  Continue to Payment (Paddle)
-                </a>
+                />
 
                 <div
                   style={{
@@ -178,10 +178,10 @@ export default async function SelectedPlanPage({ params }: PageProps) {
                 {/* 14-Day Free Trial Direct Activation */}
                 <form action={activateFreeTrial} style={{ width: "100%" }}>
                   <input type="hidden" name="plan" value={planKey} />
-                  <button
-                    type="submit"
-                    className={styles.btnPrimary}
+                  <SubmitButton
                     id="btn-start-free-trial"
+                    className={styles.btnPrimary}
+                    pendingText="Activating..."
                     style={{
                       background: "#BB0C68",
                       width: "100%",
@@ -189,7 +189,7 @@ export default async function SelectedPlanPage({ params }: PageProps) {
                     }}
                   >
                     Start 14-Day Free Trial
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
 
