@@ -52,10 +52,15 @@ export async function createOnboardingProject(formData: FormData) {
     .limit(1);
 
   if (existingProjects && existingProjects.length > 0) {
-    await supabase
+    const { error: updateError } = await supabase
       .from("projects")
       .update({ name, website, crm })
       .eq("id", existingProjects[0].id);
+
+    if (updateError) {
+      console.error("[createOnboardingProject] Error updating project with CRM:", updateError.message);
+      redirect("/onboarding?error=" + encodeURIComponent("Unable to save your website configuration. Please try again."));
+    }
 
     revalidatePath("/dashboard");
     redirect("/planning");
@@ -77,8 +82,8 @@ export async function createOnboardingProject(formData: FormData) {
     ]);
 
   if (insertError) {
-    console.error("[createOnboardingProject] Error creating first project:", insertError.message);
-    redirect("/onboarding?error=" + encodeURIComponent(insertError.message));
+    console.error("[createOnboardingProject] Error creating first project with CRM:", insertError.message);
+    redirect("/onboarding?error=" + encodeURIComponent("Unable to save your website configuration. Please try again."));
   }
 
   await healOrphanProjects(supabase, user.id, workspace.id);

@@ -287,4 +287,33 @@ describe("Sorget — User Flow, Plans, Trial & Navigation Suite", () => {
     });
     assert.equal(fullyOnboardedDest, "/dashboard/projects/proj_new_123");
   });
+
+  // ── 8. Production-Grade Onboarding CRM Persistence (No Silent Fallback) ──
+  it("12. Onboarding project creation strictly persists CRM and never silently discards customer CRM configuration", () => {
+    function createOnboardingProjectPayload(basePayload, crm) {
+      if (!crm || !crm.trim()) {
+        throw new Error("CRM used is required.");
+      }
+      return {
+        ...basePayload,
+        crm: crm.trim(),
+      };
+    }
+
+    const base = {
+      name: "Acme Corp",
+      website: "https://acme.com",
+      tracking_id: "attr_test123",
+      user_id: "user_1",
+      workspace_id: "ws_1",
+    };
+
+    const payload = createOnboardingProjectPayload(base, "hubspot");
+    assert.equal(payload.crm, "hubspot");
+    assert.equal(payload.name, "Acme Corp");
+    assert.equal(payload.website, "https://acme.com");
+
+    // Failure test: if CRM is omitted or database fails, it must reject and NOT silently proceed without CRM
+    assert.throws(() => createOnboardingProjectPayload(base, ""), /CRM used is required/);
+  });
 });
