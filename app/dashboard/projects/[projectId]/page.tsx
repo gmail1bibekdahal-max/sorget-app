@@ -80,24 +80,39 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) redirect("/login");
 
-  const { data: memberRows } = await supabase
-    .from("workspace_members")
-    .select("role, workspaces(id, name, slug)")
-    .eq("user_id", user.id);
+  const [
+    { data: memberRows },
+    { data: allProjects },
+    { count: webhookCount },
+    { data: leadsRaw, error: leadsError },
+  ] = await Promise.all([
+    supabase
+      .from("workspace_members")
+      .select("role, workspaces(id, name, slug)")
+      .eq("user_id", user.id),
+    supabase
+      .from("projects")
+      .select("id, workspace_id, name, website, tracking_id, user_id, created_at")
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("webhooks")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", projectId),
+    supabase
+      .from("leads")
+      .select("id, name, email, channel, source, medium, campaign, content, term, gclid, gbraid, gad_campaignid, gad_source, referrer, landing_url, landing_page, created_at, project_id")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
+
+  const project = (allProjects ?? []).find((proj) => proj.id === projectId && proj.user_id === user.id);
+  if (!project) notFound();
+  const p = project as Project;
 
   const userWorkspaces = (memberRows ?? [])
     .filter((r: any) => r.workspaces)
     .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
-
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
-    .select("id, workspace_id, name, website, tracking_id, user_id, created_at")
-    .eq("id", projectId)
-    .eq("user_id", user.id)
-    .single();
-
-  if (projectError || !project) notFound();
-  const p = project as Project;
 
   if (!p.workspace_id) {
     const ws = await getOrCreateDefaultWorkspace(supabase, user.id, user.email, user.user_metadata?.full_name);
@@ -117,24 +132,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
     isHubSpotConnected = Boolean(crmConn);
   }
 
-  const { count: webhookCount } = await supabase
-    .from("webhooks")
-    .select("id", { count: "exact", head: true })
-    .eq("project_id", p.id);
-
-  const { data: leadsRaw, error: leadsError } = await supabase
-    .from("leads")
-    .select("id, name, email, channel, source, medium, campaign, content, term, gclid, gbraid, gad_campaignid, gad_source, referrer, landing_url, landing_page, created_at, project_id")
-    .eq("project_id", p.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
-
   const leads: Lead[] = leadsRaw ?? [];
-
-  const { data: allProjects } = await supabase
-    .from("projects")
-    .select("id, name")
-    .order("created_at", { ascending: true });
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const scriptSrc = siteUrl ? `${siteUrl}/attributer.js` : "/attributer.js";

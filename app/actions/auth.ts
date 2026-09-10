@@ -71,15 +71,7 @@ export async function login(formData: FormData) {
     redirect("/login?error=" + encodeURIComponent(error?.message || "Invalid credentials"));
   }
 
-  // Ensure authenticated user always belongs to a workspace and heal any orphan projects
-  try {
-    const ws = await getOrCreateDefaultWorkspace(supabase, authData.user.id, authData.user.email);
-    await healOrphanProjects(supabase, authData.user.id, ws.id);
-  } catch (wsErr) {
-    console.error("[login] Workspace check error:", wsErr);
-  }
-
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
   redirect("/dashboard");
 }
 
@@ -161,7 +153,7 @@ export async function updatePassword(formData: FormData) {
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
   redirect("/login");
 }
 

@@ -86,8 +86,6 @@ export async function createOnboardingProject(formData: FormData) {
     redirect("/onboarding?error=" + encodeURIComponent("Unable to save your website configuration. Please try again."));
   }
 
-  await healOrphanProjects(supabase, user.id, workspace.id);
-
   revalidatePath("/dashboard");
   redirect("/planning");
 }

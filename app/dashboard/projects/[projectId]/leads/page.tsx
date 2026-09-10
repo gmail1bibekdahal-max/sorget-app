@@ -66,11 +66,32 @@ export default async function ProjectLeadsPage({ params, searchParams }: PagePro
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) redirect("/login");
 
-  // Fetch workspaces for navigation
-  const { data: memberRows } = await supabase
-    .from("workspace_members")
-    .select("role, workspaces(id, name, slug)")
-    .eq("user_id", user.id);
+  const [
+    { data: memberRows },
+    { data: allProjects },
+    { data: leadsRaw, error: leadsError },
+  ] = await Promise.all([
+    supabase
+      .from("workspace_members")
+      .select("role, workspaces(id, name, slug)")
+      .eq("user_id", user.id),
+    supabase
+      .from("projects")
+      .select("id, name, website, tracking_id, workspace_id, user_id, created_at")
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("leads")
+      .select(
+        "id, name, email, channel, source, medium, campaign, content, term, gclid, gbraid, gad_campaignid, gad_source, referrer, landing_url, landing_page, created_at, project_id"
+      )
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(100),
+  ]);
+
+  const projectList = allProjects ?? [];
+  const project = projectList.find((p) => p.id === projectId);
+  if (!project) notFound();
 
   const userWorkspaces = (memberRows ?? [])
     .filter((r: any) => r.workspaces)
@@ -81,36 +102,9 @@ export default async function ProjectLeadsPage({ params, searchParams }: PagePro
       role: r.role,
     }));
 
-  // Fetch projects for navigation
-  const { data: allProjects } = await supabase
-    .from("projects")
-    .select("id, name, website, tracking_id, workspace_id")
-    .order("created_at", { ascending: true });
-
-  const projectList = allProjects ?? [];
-
-  // Security: Verify project exists and belongs to user's workspace
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
-    .select("id, workspace_id, name, website, tracking_id, user_id, created_at")
-    .eq("id", projectId)
-    .single();
-
-  if (projectError || !project) notFound();
-
   const isOwner = project.user_id === user.id;
   const isMember = userWorkspaces.some((w) => w.id === project.workspace_id);
   if (!isOwner && !isMember) notFound();
-
-  // Strict Project Isolation: fetch leads scoped strictly to this project ID
-  const { data: leadsRaw, error: leadsError } = await supabase
-    .from("leads")
-    .select(
-      "id, name, email, channel, source, medium, campaign, content, term, gclid, gbraid, gad_campaignid, gad_source, referrer, landing_url, landing_page, created_at, project_id"
-    )
-    .eq("project_id", project.id)
-    .order("created_at", { ascending: false })
-    .limit(100);
 
   const leads: Lead[] = leadsRaw ?? [];
 

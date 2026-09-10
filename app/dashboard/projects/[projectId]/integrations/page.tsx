@@ -25,13 +25,28 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
-    .select("*, workspace_id")
-    .eq("id", projectId)
-    .single();
+  const [
+    { data: allProjects },
+    { data: memberRows },
+    { data: webhooks },
+  ] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("id, name, workspace_id")
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("workspace_members")
+      .select("role, workspaces(id, name, slug)")
+      .eq("user_id", user.id),
+    supabase
+      .from("webhooks")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  if (projectError || !project) redirect("/dashboard");
+  const project = (allProjects ?? []).find((p) => p.id === projectId);
+  if (!project) redirect("/dashboard");
 
   if (!project.workspace_id) {
     const ws = await getOrCreateDefaultWorkspace(supabase, user.id, user.email, user.user_metadata?.full_name);
@@ -39,20 +54,9 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
     project.workspace_id = ws.id;
   }
 
-  const { data: memberRows } = await supabase
-    .from("workspace_members")
-    .select("role, workspaces(id, name, slug)")
-    .eq("user_id", user.id);
-
   const userWorkspaces = (memberRows ?? [])
     .filter((r: any) => r.workspaces)
     .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
-
-  const { data: webhooks } = await supabase
-    .from("webhooks")
-    .select("*")
-    .eq("project_id", project.id)
-    .order("created_at", { ascending: false });
 
   let hubspotConnection: { is_active: boolean; portal_id?: string | null; token_expires_at?: string | null; scopes?: string | null } | null = null;
   if (project.workspace_id) {
@@ -76,11 +80,6 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
     const { state } = generateOAuthState(project.workspace_id, project.id);
     hubspotOAuthUrl = buildHubSpotOAuthUrl(clientId, redirectUri, state);
   }
-
-  const { data: allProjects } = await supabase
-    .from("projects")
-    .select("id, name")
-    .order("created_at", { ascending: true });
 
   return (
     <div className={styles.layout}>
