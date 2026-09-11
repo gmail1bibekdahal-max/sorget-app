@@ -107,7 +107,8 @@ export async function activateFreeTrial(formData: FormData) {
     .from("projects")
     .select("id")
     .eq("workspace_id", workspace.id)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
 
   if (projects && projects.length > 0) {
     // Brand new or existing onboarding user: send directly to their project overview!
@@ -116,3 +117,137 @@ export async function activateFreeTrial(formData: FormData) {
     redirect("/onboarding");
   }
 }
+
+/**
+ * Submit Early Access Application.
+ * Saves the applicant email and selected plan in the workspace subscription
+ * and records the early-access submission, then continues to the dashboard.
+ */
+export async function submitEarlyAccess(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    redirect("/login");
+  }
+
+  const rawEmail = (formData.get("email") as string)?.trim();
+  const submittedEmail = rawEmail && rawEmail.includes("@") ? rawEmail : (user.email || "");
+  const rawPlan = (formData.get("plan") as string)?.trim() || "1-site";
+  const canonicalPlan = resolvePlanKey({ plan_id: rawPlan, razorpay_subscription_id: rawPlan });
+  const dbPlanId = planKeyToDbPlanId(canonicalPlan);
+  const returnTo = (formData.get("returnTo") as string)?.trim();
+
+  const workspace = await getOrCreateDefaultWorkspace(
+    supabase,
+    user.id,
+    user.email,
+    user.user_metadata?.full_name
+  );
+
+  const admin = createAdminClient();
+  const db = admin || supabase;
+
+  const { data: existingSub } = await db
+    .from("subscriptions")
+    .select("id, status, plan_id, razorpay_subscription_id")
+    .eq("workspace_id", workspace.id)
+    .maybeSingle();
+
+  const now = new Date();
+  const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+  if (existingSub) {
+    const updatePayload: Record<string, any> = {
+      plan_id: dbPlanId,
+      razorpay_subscription_id: canonicalPlan,
+      razorpay_customer_id: submittedEmail,
+      updated_at: now.toISOString(),
+    };
+
+    if (existingSub.status !== "active" && existingSub.status !== "trialing") {
+      updatePayload.status = "trialing";
+      updatePayload.current_period_start = now.toISOString();
+      updatePayload.current_period_end = trialEnd.toISOString();
+    }
+
+    const { error: updateError } = await db
+      .from("subscriptions")
+      .update(updatePayload)
+      .eq("id", existingSub.id);
+
+    if (updateError) {
+      console.error("[submitEarlyAccess] Update error:", updateError.message);
+    }
+  } else {
+    const { error: insertError } = await db.from("subscriptions").insert([
+      {
+        workspace_id: workspace.id,
+        plan_id: dbPlanId,
+        razorpay_subscription_id: canonicalPlan,
+        razorpay_customer_id: submittedEmail,
+        status: "trialing",
+        current_period_start: now.toISOString(),
+        current_period_end: trialEnd.toISOString(),
+        cancel_at_period_end: false,
+      },
+    ]);
+
+    if (insertError) {
+      console.error("[submitEarlyAccess] Insert error:", insertError.message);
+    }
+  }
+
+  // Attempt to log early access lead record if workspace has projects
+  try {
+    const { data: firstProj } = await db
+      .from("projects")
+      .select("id")
+      .eq("workspace_id", workspace.id)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (firstProj) {
+      await db.from("leads").insert([
+        {
+          project_id: firstProj.id,
+          email: submittedEmail,
+          name: user.user_metadata?.full_name || "Early Access Applicant",
+          channel: "Early Access",
+          source: "planning_page",
+          campaign: canonicalPlan,
+        },
+      ]);
+    }
+  } catch (leadErr) {
+    console.warn("[submitEarlyAccess] Lead record creation fallback:", leadErr);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/projects/new");
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/planning");
+
+  if (returnTo && returnTo.startsWith("/")) {
+    redirect(returnTo);
+  }
+
+  const { data: projects } = await db
+    .from("projects")
+    .select("id")
+    .eq("workspace_id", workspace.id)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
+
+  if (projects && projects.length > 0) {
+    redirect(`/dashboard/projects/${projects[0].id}`);
+  } else {
+    redirect("/onboarding");
+  }
+}
+

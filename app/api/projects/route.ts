@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultWorkspace } from "@/lib/workspaces";
+import { sortProjectsCanonically } from "@/lib/projects";
 
 /**
  * GET /api/projects
@@ -24,7 +25,8 @@ export async function GET() {
   const { data: projects, error } = await supabase
     .from("projects")
     .select("id, name, website, tracking_id, workspace_id, created_at")
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
 
   if (error) {
     return NextResponse.json(
@@ -33,7 +35,10 @@ export async function GET() {
     );
   }
 
-  return NextResponse.json({ success: true, projects: projects ?? [] });
+  return NextResponse.json({
+    success: true,
+    projects: sortProjectsCanonically(projects ?? []),
+  });
 }
 
 /**

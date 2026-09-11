@@ -23,10 +23,20 @@ export default async function SupportPage() {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) redirect("/login");
 
-  const { data: memberRows } = await supabase
-    .from("workspace_members")
-    .select("role, workspaces(id, name, slug)")
-    .eq("user_id", user.id);
+  const [
+    { data: memberRows },
+    { data: allProjects },
+  ] = await Promise.all([
+    supabase
+      .from("workspace_members")
+      .select("role, workspaces(id, name, slug)")
+      .eq("user_id", user.id),
+    supabase
+      .from("projects")
+      .select("id, name, created_at")
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true }),
+  ]);
 
   const userWorkspaces = (memberRows ?? [])
     .filter((r: any) => r.workspaces)
@@ -34,7 +44,11 @@ export default async function SupportPage() {
 
   return (
     <div className={styles.layout}>
-      <MainNavigation userEmail={user.email} workspaces={userWorkspaces} />
+      <MainNavigation
+        userEmail={user.email}
+        workspaces={userWorkspaces}
+        projects={allProjects ?? []}
+      />
 
       <main className={styles.main}>
         <div className={styles.pageHeader}>

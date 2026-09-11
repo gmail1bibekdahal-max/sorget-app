@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { sortProjectsCanonically } from "@/lib/projects";
 import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../../../Page.module.css";
 
@@ -78,7 +79,8 @@ export default async function ProjectLeadsPage({ params, searchParams }: PagePro
     supabase
       .from("projects")
       .select("id, name, website, tracking_id, workspace_id, user_id, created_at")
-      .order("created_at", { ascending: true }),
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true }),
     supabase
       .from("leads")
       .select(
@@ -89,7 +91,7 @@ export default async function ProjectLeadsPage({ params, searchParams }: PagePro
       .limit(100),
   ]);
 
-  const projectList = allProjects ?? [];
+  const projectList = sortProjectsCanonically(allProjects ?? []);
   const project = projectList.find((p) => p.id === projectId);
   if (!project) notFound();
 

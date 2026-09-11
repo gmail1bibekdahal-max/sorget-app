@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { sortProjectsCanonically } from "@/lib/projects";
 import CopyButton from "@/app/components/CopyButton";
 import MainNavigation from "@/app/components/MainNavigation";
 import styles from "./Page.module.css";
@@ -77,7 +78,8 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
     supabase
       .from("projects")
       .select("id, name, website, tracking_id, created_at")
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true }),
     supabase
       .from("leads")
       .select("id, name, email, channel, source, medium, gclid, created_at, project_id")
@@ -89,10 +91,12 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
     .filter((r: any) => r.workspaces)
     .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
 
-  const projectList: Project[] = (projects ?? []).map((p) => ({
-    ...p,
-    lead_count: (leads ?? []).filter((l) => l.project_id === p.id).length,
-  }));
+  const projectList: Project[] = sortProjectsCanonically(
+    (projects ?? []).map((p) => ({
+      ...p,
+      lead_count: (leads ?? []).filter((l) => l.project_id === p.id).length,
+    }))
+  );
 
   // Target User Flow: users without a tracked website must complete onboarding first
   if (projectList.length === 0) {

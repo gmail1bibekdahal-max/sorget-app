@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultWorkspace } from "@/lib/workspaces";
+import { sortProjectsCanonically } from "@/lib/projects";
 import CopyButton from "@/app/components/CopyButton";
 import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../../Page.module.css";
@@ -93,7 +94,8 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
     supabase
       .from("projects")
       .select("id, workspace_id, name, website, tracking_id, user_id, created_at")
-      .order("created_at", { ascending: true }),
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true }),
     supabase
       .from("webhooks")
       .select("id", { count: "exact", head: true })
@@ -138,13 +140,15 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
   const scriptSrc = siteUrl ? `${siteUrl}/attributer.js` : "/attributer.js";
   const installSnippet = `<script src="${scriptSrc}" data-tracking-id="${p.tracking_id}"></script>`;
 
+  const projectNavList = sortProjectsCanonically(allProjects ?? []);
+
   return (
     <div className={styles.layout}>
       <MainNavigation
         userEmail={user.email}
         workspaces={userWorkspaces}
         activeWorkspaceId={p.workspace_id || undefined}
-        projects={allProjects ?? []}
+        projects={projectNavList}
         activeProjectId={p.id}
       />
 

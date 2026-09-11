@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { buildHubSpotOAuthUrl, generateOAuthState } from "@/lib/crm";
 import { createWebhook, deleteWebhook } from "@/app/actions/webhooks";
+import { sortProjectsCanonically } from "@/lib/projects";
 import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../Page.module.css";
 
@@ -35,9 +36,10 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
   const { data: projects } = await supabase
     .from("projects")
     .select("id, name, website, tracking_id, workspace_id, created_at")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
 
-  const projectList = projects ?? [];
+  const projectList = sortProjectsCanonically(projects ?? []);
   const activeProject = projectList.find((p) => p.id === selectedProjectId) || projectList[0] || null;
 
   const { data: webhooks } = activeProject
@@ -69,7 +71,13 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
 
   return (
     <div className={styles.layout}>
-      <MainNavigation userEmail={user.email} workspaces={userWorkspaces} activeWorkspaceId={activeProject?.workspace_id || undefined} />
+      <MainNavigation
+        userEmail={user.email}
+        workspaces={userWorkspaces}
+        activeWorkspaceId={activeProject?.workspace_id || undefined}
+        projects={projectList}
+        activeProjectId={activeProject?.id}
+      />
 
       <main className={styles.main}>
         {success && <div className={styles.alertSuccess}><span>✓</span><span>{success}</span></div>}

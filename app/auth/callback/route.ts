@@ -90,6 +90,7 @@ export async function GET(request: NextRequest) {
         .select("id")
         .eq("workspace_id", ws.id)
         .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
         .limit(1);
 
       if (!userProjects || userProjects.length === 0) {

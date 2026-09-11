@@ -2,11 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { getOrCreateDefaultWorkspace } from "@/lib/workspaces";
 import { PLANS, resolvePlanKey } from "@/lib/billing";
-import { activateFreeTrial } from "@/app/actions/billing";
-import { getPaddlePriceId, getPaddleConfig } from "@/lib/paddle";
+import { activateFreeTrial, submitEarlyAccess } from "@/app/actions/billing";
 import SubmitButton from "@/app/components/SubmitButton";
 import styles from "../checkout/Checkout.module.css";
 
@@ -21,8 +18,8 @@ export async function generateMetadata({ params }: PageProps) {
   const canonicalSelectedKey = resolvePlanKey({ plan_id: planKey, razorpay_subscription_id: planKey });
   const plan = PLANS[canonicalSelectedKey] || PLANS["1-site"];
   return {
-    title: `${plan.name} Plan — Sorget`,
-    description: `Complete your setup for Sorget ${plan.name} plan with a 14-day free trial.`,
+    title: `Start with Sorget: ${plan.name} Plan`,
+    description: `Get early access to Sorget for the ${plan.name} plan and start tracking lead attribution.`,
   };
 }
 
@@ -37,49 +34,29 @@ export default async function SelectedPlanPage({ params, searchParams }: PagePro
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const workspace = await getOrCreateDefaultWorkspace(supabase, user.id, user.email, user.user_metadata?.full_name);
-  const admin = createAdminClient();
-  const db = admin || supabase;
-  const { data: currentSub } = await db
-    .from("subscriptions")
-    .select("plan_id, razorpay_subscription_id, status")
-    .eq("workspace_id", workspace.id)
-    .maybeSingle();
-
-  const currentPlanKey = currentSub ? resolvePlanKey(currentSub) : "";
-  const isCurrentPlan = currentPlanKey === canonicalSelectedKey;
-  const isUpgrade = Boolean(currentSub && !isCurrentPlan);
-
   const plan = PLANS[canonicalSelectedKey] || PLANS["1-site"];
-  const paddlePriceId = getPaddlePriceId(planKey);
-  const paddleConfig = getPaddleConfig();
-
   const isCustom = planKey === "custom";
 
-  const d = new Date();
-  d.setDate(d.getDate() + 14);
-  const trialEndStr = d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-
-  const inclusions = [
-    plan.websiteLimit === 1 ? "1 website" : `${plan.websiteLimit} websites`,
+  const sitesText = `${plan.websiteLimit} ${plan.websiteLimit === 1 ? "website" : "websites"}`;
+  const leadsText =
     plan.leadsMonthlyLimit >= 1000000
-      ? "Custom lead capacity"
-      : `Up to ${plan.leadsMonthlyLimit.toLocaleString()} leads/month`,
-    "14-day free trial included",
-    "First-touch and multi-touch UTM tracking",
-    "CRM and webhook sync",
-  ];
+      ? "custom leads"
+      : `${plan.leadsMonthlyLimit.toLocaleString()} leads/month`;
 
-  const TRUST_POINTS = [
-    `14-day free trial active until ${trialEndStr}`,
-    "Cancel anytime in 1 click before trial ends",
-    "All marketing attribution features included",
-    "No disruption to existing website traffic",
+  const planSummary = isCustom
+    ? "Custom pricing · Custom websites · Custom leads"
+    : `$${plan.priceMonthlyUsd}/month · ${sitesText} · ${leadsText}`;
+
+  const FEATURE_POINTS = [
+    "Full access to multi-touch attribution engine",
+    "Attribution tracking across Google, Meta, Organic & Direct",
+    "Real-time CRM & webhook sync",
+    "No payment required during the trial",
   ];
 
   return (
     <div className={styles.page}>
-      {/* Left: Selected Plan & Payment Actions */}
+      {/* Left: Selected Plan & Early Access / Trial Form */}
       <div className={styles.formSide}>
         <div className={styles.card}>
           <Link href={`/planning${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className={styles.backLink}>
@@ -100,54 +77,16 @@ export default async function SelectedPlanPage({ params, searchParams }: PagePro
             Selected Plan
           </span>
 
-          <h1 className={styles.title}>Sorget {plan.name}</h1>
+          <h1 className={styles.title} style={{ fontSize: "28px", marginBottom: "0.35rem" }}>
+            Start with Sorget
+          </h1>
 
-          <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", margin: "0.75rem 0 1.25rem" }}>
-            <span style={{ fontSize: "2rem", fontWeight: 800, color: "#3A313C" }}>
-              ${plan.priceMonthlyUsd}
-            </span>
-            <span style={{ color: "#717680", fontSize: "0.95rem", fontWeight: 500 }}>
-              / month
-            </span>
-            <span
-              style={{
-                marginLeft: "auto",
-                background: "#ecfdf5",
-                color: "#065f46",
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                padding: "3px 8px",
-                borderRadius: "6px",
-              }}
-            >
-              14-Day Free Trial
-            </span>
-          </div>
-
-          <div
-            style={{
-              background: "#fafafa",
-              border: "1px solid #e5e7eb",
-              borderRadius: "12px",
-              padding: "1rem",
-              marginBottom: "1.5rem",
-            }}
-          >
-            <p style={{ fontSize: "0.8rem", fontWeight: 600, color: "#4b5563", marginBottom: "0.5rem", textTransform: "uppercase" }}>
-              Plan Inclusions
-            </p>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.45rem" }}>
-              {inclusions.map((item) => (
-                <li key={item} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.875rem", color: "#374151" }}>
-                  <span style={{ color: "#059669", fontWeight: 700 }}>✓</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <p style={{ fontSize: "1rem", color: "#3A313C", fontWeight: 600, margin: "0.25rem 0 1.5rem" }}>
+            {planSummary}
+          </p>
 
           {isCustom ? (
-            <div style={{ textAlign: "center", padding: "1rem 0" }}>
+            <div style={{ textAlign: "center", padding: "1.25rem 0" }}>
               <p style={{ color: "#4b5563", marginBottom: "1.25rem", fontSize: "0.95rem" }}>
                 Our team will tailor website limits and dedicated support for your organization.
               </p>
@@ -160,68 +99,106 @@ export default async function SelectedPlanPage({ params, searchParams }: PagePro
               </a>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <form action={activateFreeTrial} style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <input type="hidden" name="plan" value={planKey} />
-                {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#3A313C", margin: "0 0 1.25rem" }}>
+                Choose how you&apos;d like to continue
+              </h2>
 
-                <SubmitButton
-                  id="btn-paddle-checkout"
-                  className={styles.btnPrimary}
-                  pendingText="Activating..."
-                  style={{
-                    background: "#3A313C",
-                    width: "100%",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                  }}
-                  title={`Paddle Price ID: ${paddlePriceId || "sandbox"}`}
-                >
-                  {isCurrentPlan
-                    ? "Current Active Plan ✓"
-                    : isUpgrade
-                    ? `Upgrade to ${plan.name} (${plan.websiteLimit} Websites)`
-                    : `Continue with ${plan.name} Plan`}
-                </SubmitButton>
+              {/* Option 1: Early Access */}
+              <div style={{ marginBottom: "1.25rem" }}>
+                <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#3A313C", margin: "0 0 0.25rem" }}>
+                  Early Access
+                </h3>
+                <p style={{ fontSize: "0.85rem", color: "#6b7280", margin: "0 0 0.75rem" }}>
+                  Join Sorget early and get access to the platform as we continue improving the product.
+                </p>
 
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    margin: "0.25rem 0",
-                    color: "#9ca3af",
-                    fontSize: "0.85rem",
-                  }}
-                >
-                  <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
-                  <span>or</span>
-                  <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
-                </div>
+                <form action={submitEarlyAccess} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <input type="hidden" name="plan" value={planKey} />
+                  {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
 
-                <SubmitButton
-                  id="btn-start-free-trial"
-                  className={styles.btnPrimary}
-                  pendingText="Activating..."
-                  style={{
-                    background: "#BB0C68",
-                    width: "100%",
-                    justifyContent: "center",
-                  }}
-                >
-                  {isCurrentPlan ? "Current Plan Active ✓" : "Start 14-Day Free Trial"}
-                </SubmitButton>
-              </form>
+                  <input
+                    type="email"
+                    name="email"
+                    id="input-early-access-email"
+                    className={styles.fieldInput}
+                    placeholder="Email Address"
+                    defaultValue={user.email || ""}
+                    required
+                    aria-label="Email Address"
+                  />
 
-              <p style={{ fontSize: "0.8rem", color: "#9ca3af", textAlign: "center", marginTop: "1rem", lineHeight: 1.5 }}>
-                14 days free, then ${plan.priceMonthlyUsd}/mo. No commitment. Cancel anytime before {trialEndStr} to avoid charges.
-              </p>
+                  <SubmitButton
+                    id="btn-get-early-access"
+                    className={styles.btnPrimary}
+                    pendingText="Submitting..."
+                    style={{
+                      background: "#3A313C",
+                      width: "100%",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Continue with Email
+                  </SubmitButton>
+                </form>
+              </div>
+
+              {/* OR Divider */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  margin: "0.75rem 0 1.25rem",
+                  color: "#9ca3af",
+                  fontSize: "0.8rem",
+                  textTransform: "uppercase",
+                  fontWeight: 600,
+                }}
+              >
+                <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+                <span>OR</span>
+                <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+              </div>
+
+              {/* Option 2: 14-Day Free Trial */}
+              <div>
+                <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#3A313C", margin: "0 0 0.25rem" }}>
+                  14-Day Free Trial
+                </h3>
+                <p style={{ fontSize: "0.85rem", color: "#6b7280", margin: "0 0 0.75rem" }}>
+                  Start your 14-day free trial and explore Sorget with your selected plan.
+                </p>
+
+                <form action={activateFreeTrial} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <input type="hidden" name="plan" value={planKey} />
+                  {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
+
+                  <SubmitButton
+                    id="btn-start-free-trial"
+                    className={styles.btnPrimary}
+                    pendingText="Activating..."
+                    style={{
+                      background: "#BB0C68",
+                      width: "100%",
+                      justifyContent: "center",
+                    }}
+                  >
+                    Start 14-Day Free Trial
+                  </SubmitButton>
+                </form>
+
+                <p style={{ fontSize: "0.8rem", color: "#6b7280", marginTop: "0.6rem", textAlign: "center" }}>
+                  No payment required during the trial.
+                </p>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Right: Trust Panel */}
+      {/* Right: Product & Early Access Overview Panel */}
       <div className={styles.trustSide}>
         <a href="https://sorget.site/" className={styles.trustLogo}>
           <Image src="/logo.png" alt="Sorget Logo" width={32} height={32} className={styles.trustLogoImg} priority />
@@ -229,16 +206,16 @@ export default async function SelectedPlanPage({ params, searchParams }: PagePro
         </a>
 
         <h2 className={styles.trustHeadline}>
-          Start your 14-day free trial of Sorget {plan.name}
+          Start with Sorget
         </h2>
         <p className={styles.trustSubtitle}>
-          ${plan.priceMonthlyUsd}/month after your trial. Instant access to full attribution tracking.
+          Know exactly which campaigns, ads, and channels drive your revenue and leads.
         </p>
 
         <div className={styles.trustDivider} />
 
         <ul className={styles.trustList}>
-          {TRUST_POINTS.map((item) => (
+          {FEATURE_POINTS.map((item) => (
             <li key={item}>
               <span className={styles.trustCheck}>✓</span>
               {item}
@@ -247,9 +224,10 @@ export default async function SelectedPlanPage({ params, searchParams }: PagePro
         </ul>
 
         <p className={styles.trustNote}>
-          Your first website is already connected and ready to receive attribution data once trial starts.
+          Instant snippet setup. Start capturing first-touch and multi-touch lead attribution in minutes.
         </p>
       </div>
     </div>
   );
 }
+

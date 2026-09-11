@@ -50,6 +50,7 @@ export async function createOnboardingProject(formData: FormData) {
     .select("id, name, tracking_id")
     .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: true })
+    .order("id", { ascending: true })
     .limit(1);
 
   if (existingProjects && existingProjects.length > 0) {

@@ -13,6 +13,7 @@ export const metadata = {
 };
 
 import { canAddWebsite, PLANS, resolvePlanKey } from "@/lib/billing";
+import { sortProjectsCanonically } from "@/lib/projects";
 
 interface PageProps {
   searchParams: Promise<{ error?: string; success?: string }>;
@@ -35,11 +36,12 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
 
   const { data: allProjects } = await db
     .from("projects")
-    .select("id, name")
+    .select("id, name, created_at")
     .eq("workspace_id", activeWsId)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
 
-  const projectList = allProjects ?? [];
+  const projectList = sortProjectsCanonically(allProjects ?? []);
 
   // Check workspace subscription and current website limit
   const { data: sub } = await db

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buildHubSpotOAuthUrl, generateOAuthState } from "@/lib/crm";
 import { createWebhook, deleteWebhook } from "@/app/actions/webhooks";
 import { getOrCreateDefaultWorkspace } from "@/lib/workspaces";
+import { sortProjectsCanonically } from "@/lib/projects";
 import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../../../Page.module.css";
 
@@ -32,8 +33,9 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
   ] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, name, workspace_id")
-      .order("created_at", { ascending: true }),
+      .select("id, name, workspace_id, created_at")
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true }),
     supabase
       .from("workspace_members")
       .select("role, workspaces(id, name, slug)")
@@ -81,13 +83,15 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
     hubspotOAuthUrl = buildHubSpotOAuthUrl(clientId, redirectUri, state);
   }
 
+  const projectNavList = sortProjectsCanonically(allProjects ?? []);
+
   return (
     <div className={styles.layout}>
       <MainNavigation
         userEmail={user.email}
         workspaces={userWorkspaces}
         activeWorkspaceId={project.workspace_id || undefined}
-        projects={allProjects ?? []}
+        projects={projectNavList}
         activeProjectId={project.id}
       />
 

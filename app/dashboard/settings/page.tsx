@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { inviteTeamMember, removeMember, revokeInvitation } from "@/app/actions/team";
 import { PLANS, resolvePlanKey } from "@/lib/billing";
+import { sortProjectsCanonically } from "@/lib/projects";
 import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../Page.module.css";
 
@@ -59,8 +60,9 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
   const { data: allProjects } = await supabase
     .from("projects")
-    .select("id, name")
-    .order("created_at", { ascending: true });
+    .select("id, name, created_at")
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
 
   const currentPlanKey = resolvePlanKey(subscription);
   const currentPlan = (PLANS as any)[currentPlanKey] || PLANS["1-site"];
@@ -76,7 +78,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
         userEmail={user.email}
         workspaces={userWorkspaces}
         activeWorkspaceId={activeWs.id}
-        projects={allProjects ?? []}
+        projects={sortProjectsCanonically(allProjects ?? [])}
       />
 
       <main className={styles.main}>

@@ -20,13 +20,17 @@ export default async function DebuggerPage({ params }: PageProps) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: project, error } = await supabase.from("projects").select("*").eq("id", id).single();
-  if (error || !project) redirect("/dashboard");
+  const [
+    { data: project, error },
+    { data: memberRows },
+    { data: allProjects },
+  ] = await Promise.all([
+    supabase.from("projects").select("*").eq("id", id).single(),
+    supabase.from("workspace_members").select("role, workspaces(id, name, slug)").eq("user_id", user.id),
+    supabase.from("projects").select("id, name, created_at").order("created_at", { ascending: true }).order("id", { ascending: true }),
+  ]);
 
-  const { data: memberRows } = await supabase
-    .from("workspace_members")
-    .select("role, workspaces(id, name, slug)")
-    .eq("user_id", user.id);
+  if (error || !project) redirect("/dashboard");
 
   const userWorkspaces = (memberRows ?? [])
     .filter((r: any) => r.workspaces)
@@ -38,7 +42,15 @@ export default async function DebuggerPage({ params }: PageProps) {
 
   return (
     <div className={styles.layout}>
-      <MainNavigation userEmail={user.email} workspaces={userWorkspaces} activeWorkspaceId={project.workspace_id || undefined} activeProjectName={project.name} activeProjectHref={`/dashboard/projects/${project.id}`} />
+      <MainNavigation
+        userEmail={user.email}
+        workspaces={userWorkspaces}
+        activeWorkspaceId={project.workspace_id || undefined}
+        projects={allProjects ?? []}
+        activeProjectId={project.id}
+        activeProjectName={project.name}
+        activeProjectHref={`/dashboard/projects/${project.id}`}
+      />
 
       <main className={styles.main}>
         <Link href={`/dashboard/projects/${project.id}`} className={styles.backLink}>← Back to {project.name}</Link>

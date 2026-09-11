@@ -5,11 +5,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/actions/auth";
+import { sortProjectsCanonically } from "@/lib/projects";
 import type { WorkspaceItem } from "./WorkspaceSwitcher";
 
 export interface ProjectNavOption {
   id: string;
   name: string;
+  created_at?: string | null;
 }
 
 interface MainNavigationProps {
@@ -31,13 +33,15 @@ export default function MainNavigation({
 }: MainNavigationProps) {
   const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [projectList, setProjectList] = useState<ProjectNavOption[]>(initialProjects);
+  const [projectList, setProjectList] = useState<ProjectNavOption[]>(() =>
+    sortProjectsCanonically(initialProjects)
+  );
   const [manualExpanded, setManualExpanded] = useState<Record<string, boolean>>({});
 
   // Fetch projects from API if not provided in server props
   useEffect(() => {
     if (initialProjects && initialProjects.length > 0) {
-      setProjectList(initialProjects);
+      setProjectList(sortProjectsCanonically(initialProjects));
       return;
     }
 
@@ -46,7 +50,7 @@ export default function MainNavigation({
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (isMounted && data?.projects) {
-          setProjectList(data.projects);
+          setProjectList(sortProjectsCanonically(data.projects));
         }
       })
       .catch(() => {});
