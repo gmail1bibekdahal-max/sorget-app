@@ -70,7 +70,6 @@ describe("Project B App-Only Architecture & Route Protection", () => {
   it("4. Dashboard subpages require authentication", () => {
     const subpages = [
       "app/dashboard/page.tsx",
-      "app/dashboard/getting-started/page.tsx",
       "app/dashboard/integrations/page.tsx",
       "app/dashboard/settings/page.tsx",
       "app/dashboard/support/page.tsx",

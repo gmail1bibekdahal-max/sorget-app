@@ -1,15 +1,14 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { updateWorkspace, deleteWorkspace } from "@/app/actions/workspaces";
 import { inviteTeamMember, removeMember, revokeInvitation } from "@/app/actions/team";
-import { PLANS } from "@/lib/billing";
+import { PLANS, resolvePlanKey } from "@/lib/billing";
 import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../Page.module.css";
 
 export const metadata = {
   title: "Settings — Sorget",
-  description: "Manage your workspace settings, team members, and subscription.",
+  description: "Manage your subscription, team members, and account.",
 };
 
 interface PageProps {
@@ -18,7 +17,7 @@ interface PageProps {
 
 export default async function SettingsPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const activeTab = params.tab || "workspace";
+  const activeTab = params.tab || "billing";
   const selectedWsId = params.workspace;
   const successMsg = params.success;
   const errorMsg = params.error;
@@ -54,22 +53,21 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("*")
+    .select("plan_id, razorpay_subscription_id, status")
     .eq("workspace_id", activeWs.id)
-    .single();
+    .maybeSingle();
 
   const { data: allProjects } = await supabase
     .from("projects")
     .select("id, name")
     .order("created_at", { ascending: true });
 
-  const currentPlanKey = subscription?.plan || subscription?.plan_id || "starter";
-  const currentPlan = (PLANS as any)[currentPlanKey] || PLANS.starter;
+  const currentPlanKey = resolvePlanKey(subscription);
+  const currentPlan = (PLANS as any)[currentPlanKey] || PLANS["1-site"];
 
   const tabs = [
-    { key: "workspace", label: "Workspace" },
-    { key: "team", label: "Team Members" },
     { key: "billing", label: "Subscription" },
+    { key: "team", label: "Team Members" },
   ];
 
   return (
@@ -88,52 +86,20 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Settings</h1>
-          <p className={styles.pageSubtitle}>Manage your workspace configuration, team access, and subscription plan.</p>
+          <p className={styles.pageSubtitle}>Manage your subscription plan and team access.</p>
         </div>
 
         <div className={styles.tabs}>
           {tabs.map((t) => (
             <Link
               key={t.key}
-              href={`/dashboard/settings?tab=${t.key}${activeWs.id ? `&workspace=${activeWs.id}` : ""}`}
+              href={`/dashboard/settings?tab=${t.key}`}
               className={`${styles.tab} ${activeTab === t.key ? styles.tabActive : ""}`}
             >
               {t.label}
             </Link>
           ))}
         </div>
-
-        {/* TAB 1: WORKSPACE */}
-        {activeTab === "workspace" && (
-          <div className={styles.cards}>
-            <div className={styles.card}>
-              <h2 className={styles.cardTitle} style={{ marginBottom: "1.25rem" }}>Workspace Details</h2>
-              <form action={updateWorkspace} style={{ display: "flex", flexDirection: "column", gap: "1rem", maxWidth: "480px" }}>
-                <input type="hidden" name="workspaceId" value={activeWs.id} />
-                <div className={styles.formGroup}>
-                  <label className={styles.inputLabel} htmlFor="ws-name">Workspace Name</label>
-                  <input id="ws-name" name="name" type="text" defaultValue={activeWs.name} required className={styles.input} />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.inputLabel} htmlFor="ws-slug">Workspace Identifier</label>
-                  <input id="ws-slug" type="text" defaultValue={activeWs.slug} disabled className={styles.input} style={{ background: "#f3f4f6", cursor: "not-allowed" }} />
-                </div>
-                <button type="submit" className={styles.btnPrimary} style={{ alignSelf: "flex-start" }}>Save Changes</button>
-              </form>
-            </div>
-
-            {activeWs.role === "owner" && activeWs.id !== "default" && (
-              <div className={styles.dangerZone}>
-                <h3 className={styles.dangerTitle}>Delete Workspace</h3>
-                <p className={styles.dangerText}>Permanently delete this workspace and remove all associated website connections and team members.</p>
-                <form action={deleteWorkspace}>
-                  <input type="hidden" name="workspaceId" value={activeWs.id} />
-                  <button type="submit" className={styles.btnDanger}>Delete Workspace</button>
-                </form>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* TAB 2: TEAM MEMBERS */}
         {activeTab === "team" && (

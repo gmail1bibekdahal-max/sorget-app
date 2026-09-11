@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getOrCreateDefaultWorkspace } from "@/lib/workspaces";
 import { createProject } from "@/app/actions/projects";
 import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../../Page.module.css";
@@ -10,47 +12,44 @@ export const metadata = {
   description: "Track a new website and generate its unique tracking snippet.",
 };
 
-import { canAddWebsite, PLANS } from "@/lib/billing";
+import { canAddWebsite, PLANS, resolvePlanKey } from "@/lib/billing";
 
 interface PageProps {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }
 
 export default async function NewProjectPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const errorMsg = params.error;
+  const successMsg = params.success;
 
   const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) redirect("/login");
 
-  const { data: memberRows } = await supabase
-    .from("workspace_members")
-    .select("role, workspaces(id, name, slug)")
-    .eq("user_id", user.id);
+  const workspace = await getOrCreateDefaultWorkspace(supabase, user.id, user.email, user.user_metadata?.full_name);
+  const activeWsId = workspace.id;
 
-  const userWorkspaces = (memberRows ?? [])
-    .filter((r: any) => r.workspaces)
-    .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
+  const admin = createAdminClient();
+  const db = admin || supabase;
 
-  const activeWsId = userWorkspaces[0]?.id;
-
-  const { data: allProjects } = await supabase
+  const { data: allProjects } = await db
     .from("projects")
     .select("id, name")
+    .eq("workspace_id", activeWsId)
     .order("created_at", { ascending: true });
 
   const projectList = allProjects ?? [];
 
   // Check workspace subscription and current website limit
-  const { data: sub } = await supabase
+  const { data: sub } = await db
     .from("subscriptions")
-    .select("plan, plan_id, status")
+    .select("plan_id, razorpay_subscription_id, status")
     .eq("workspace_id", activeWsId)
-    .single();
+    .maybeSingle();
 
-  const activePlanKey = sub?.plan || sub?.plan_id || "starter";
-  const planConfig = PLANS[activePlanKey] || PLANS.starter;
+  const activePlanKey = resolvePlanKey(sub);
+  const planConfig = PLANS[activePlanKey] || PLANS["1-site"];
   const isAllowed = canAddWebsite(activePlanKey, projectList.length);
   const maxWebsites = planConfig.websiteLimit || 1;
 
@@ -58,12 +57,11 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
     <div className={styles.layout}>
       <MainNavigation
         userEmail={user.email}
-        workspaces={userWorkspaces}
         projects={projectList}
       />
 
       <main className={styles.main} style={{ maxWidth: "600px" }}>
-        <Link href="/dashboard" className={styles.backLink}>← Back to Websites</Link>
+        <Link href="/dashboard" className={styles.backLink}>← Back to Dashboard</Link>
 
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Add New Website</h1>
@@ -71,6 +69,7 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
         </div>
 
         {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
+        {successMsg && <div className={styles.alertSuccess}><span>✓</span><span>{successMsg}</span></div>}
 
         {!isAllowed ? (
           <div className={styles.card} style={{ borderLeft: "4px solid #BB0C68" }}>
@@ -80,12 +79,20 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
             <p style={{ color: "#4b5563", fontSize: "0.9rem", lineHeight: 1.6, marginBottom: "1.25rem" }}>
               Your current <strong>{planConfig.name}</strong> plan supports up to {maxWebsites} {maxWebsites === 1 ? "website" : "websites"}.
               You are currently tracking {projectList.length} {projectList.length === 1 ? "website" : "websites"}.
-              Upgrade your plan to track additional websites.
+              {maxWebsites >= 25
+                ? " Contact us to track additional websites with a custom plan."
+                : " Upgrade your plan to track additional websites."}
             </p>
-            <div style={{ display: "flex", gap: "0.75rem" }}>
-              <Link href="/planning" className={styles.btnPrimary} style={{ textDecoration: "none" }}>
-                Upgrade Plan →
-              </Link>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              {maxWebsites < 25 ? (
+                <Link href="/planning?returnTo=/dashboard/projects/new" className={styles.btnPrimary} style={{ textDecoration: "none" }}>
+                  {maxWebsites === 1 ? "Upgrade to 5 Sites ($99) →" : "Upgrade to 25 Sites ($299) →"}
+                </Link>
+              ) : (
+                <a href="mailto:sales@sorget.site?subject=Custom%20Website%20Limit%20Inquiry" className={styles.btnPrimary} style={{ textDecoration: "none" }}>
+                  Contact Us for Custom Plan →
+                </a>
+              )}
               <Link href="/dashboard" className={styles.btnSecondary} style={{ textDecoration: "none" }}>
                 Return to Dashboard
               </Link>

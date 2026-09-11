@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/actions/auth";
-import { WorkspaceSwitcher, WorkspaceItem } from "./WorkspaceSwitcher";
+import type { WorkspaceItem } from "./WorkspaceSwitcher";
 
 export interface ProjectNavOption {
   id: string;
@@ -71,9 +71,7 @@ export default function MainNavigation({
     return projectId === currentProjectId;
   };
 
-  const toggleProject = (projectId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const toggleProject = (projectId: string) => {
     setManualExpanded((prev) => ({
       ...prev,
       [projectId]: !isExpanded(projectId),
@@ -81,7 +79,6 @@ export default function MainNavigation({
   };
 
   // Route matchers
-  const isGettingStarted = pathname.startsWith("/dashboard/getting-started");
   const isSettings =
     pathname.startsWith("/dashboard/settings") ||
     pathname.startsWith("/dashboard/team") ||
@@ -144,32 +141,27 @@ export default function MainNavigation({
           </div>
           <span className="sidebar-brand-name">Sorget</span>
         </Link>
-
-        {workspaces.length > 0 && (
-          <div className="sidebar-workspace-container">
-            <WorkspaceSwitcher workspaces={workspaces} activeWorkspaceId={activeWorkspaceId} />
-          </div>
-        )}
       </div>
 
       {/* Navigation Links Body */}
       <div className={`sidebar-body ${mobileOpen ? "sidebar-body-open" : ""}`}>
         <nav className="sidebar-nav">
-          {/* Websites Global Link */}
+          {/* Dashboard Global Link */}
           <Link
             href="/dashboard"
-            id="nav-websites-root"
+            id="nav-dashboard-root"
             className={`sidebar-link ${isDashboardRoot ? "sidebar-link-active" : ""}`}
             onClick={() => setMobileOpen(false)}
           >
             <span className="sidebar-icon">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-                <path d="M2 12h20" />
+                <rect width="7" height="9" x="3" y="3" rx="1" />
+                <rect width="7" height="5" x="14" y="3" rx="1" />
+                <rect width="7" height="9" x="14" y="12" rx="1" />
+                <rect width="7" height="5" x="3" y="16" rx="1" />
               </svg>
             </span>
-            <span className="sidebar-label" style={{ fontWeight: 600 }}>Websites</span>
+            <span className="sidebar-label" style={{ fontWeight: 600 }}>Dashboard</span>
           </Link>
 
           {/* Expandable Website Rows */}
@@ -191,31 +183,24 @@ export default function MainNavigation({
                 return (
                   <div key={project.id} className="sidebar-project-item">
                     {/* Website Row Header */}
-                    <div
+                    <button
+                      type="button"
                       className={`sidebar-project-header ${
                         isCurrentProject ? "sidebar-project-header-active" : ""
                       }`}
+                      onClick={() => toggleProject(project.id)}
+                      aria-expanded={open}
+                      title={project.name}
+                      style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
                     >
-                      <Link
-                        href={basePath}
-                        className="sidebar-project-name"
-                        onClick={() => setMobileOpen(false)}
-                        title={project.name}
-                      >
-                        <span style={{ fontSize: "14px", opacity: 0.8 }}>🌐</span>
-                        <span>{project.name}</span>
-                      </Link>
-
-                      <button
-                        type="button"
-                        className="sidebar-chevron-btn"
-                        onClick={(e) => toggleProject(project.id, e)}
-                        aria-label={open ? "Collapse website menu" : "Expand website menu"}
-                        title={open ? "Collapse" : "Expand"}
-                      >
-                        {open ? "▼" : "▶"}
-                      </button>
-                    </div>
+                      <span className="sidebar-icon" style={{ opacity: 0.8 }}>🌐</span>
+                      <span className="sidebar-project-name" style={{ flex: 1 }}>{project.name}</span>
+                      <span className="sidebar-chevron-btn">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s" }}>
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </span>
+                    </button>
 
                     {/* Expandable Sub-Navigation */}
                     {open && (
@@ -249,24 +234,6 @@ export default function MainNavigation({
             </div>
           )}
 
-          {/* Getting Started Link */}
-          <Link
-            href="/dashboard/getting-started"
-            id="nav-getting-started"
-            className={`sidebar-link ${isGettingStarted ? "sidebar-link-active" : ""}`}
-            style={{ marginTop: "0.5rem" }}
-            onClick={() => setMobileOpen(false)}
-          >
-            <span className="sidebar-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-                <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
-                <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
-                <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
-              </svg>
-            </span>
-            <span className="sidebar-label">Getting Started</span>
-          </Link>
         </nav>
 
         {/* Bottom Actions */}

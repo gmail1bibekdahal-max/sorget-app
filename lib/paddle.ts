@@ -12,10 +12,14 @@ import crypto from "crypto";
  * - PADDLE_PRICE_ID_50_SITES
  */
 export const PADDLE_PRICE_IDS: Record<string, string> = {
-  lite: process.env.PADDLE_PRICE_ID_LITE || "pri_01_lite_sandbox",
+  "1-site": process.env.PADDLE_PRICE_ID_1_SITE || process.env.PADDLE_PRICE_ID_LITE || "pri_01_1site_sandbox",
+  "1_site": process.env.PADDLE_PRICE_ID_1_SITE || process.env.PADDLE_PRICE_ID_LITE || "pri_01_1site_sandbox",
+  lite: process.env.PADDLE_PRICE_ID_1_SITE || process.env.PADDLE_PRICE_ID_LITE || "pri_01_1site_sandbox",
   starter: process.env.PADDLE_PRICE_ID_STARTER || "pri_01_starter_sandbox",
-  pro: process.env.PADDLE_PRICE_ID_PRO || process.env.PADDLE_PRICE_ID_PROFESSIONAL || "pri_01_pro_sandbox",
-  professional: process.env.PADDLE_PRICE_ID_PRO || process.env.PADDLE_PRICE_ID_PROFESSIONAL || "pri_01_pro_sandbox",
+  "5-sites": process.env.PADDLE_PRICE_ID_5_SITES || process.env.PADDLE_PRICE_ID_PRO || "pri_01_5sites_sandbox",
+  "5_sites": process.env.PADDLE_PRICE_ID_5_SITES || process.env.PADDLE_PRICE_ID_PRO || "pri_01_5sites_sandbox",
+  pro: process.env.PADDLE_PRICE_ID_5_SITES || process.env.PADDLE_PRICE_ID_PRO || "pri_01_5sites_sandbox",
+  professional: process.env.PADDLE_PRICE_ID_5_SITES || process.env.PADDLE_PRICE_ID_PRO || "pri_01_5sites_sandbox",
   "10-sites": process.env.PADDLE_PRICE_ID_10_SITES || "pri_01_10sites_sandbox",
   "10_sites": process.env.PADDLE_PRICE_ID_10_SITES || "pri_01_10sites_sandbox",
   "25-sites": process.env.PADDLE_PRICE_ID_25_SITES || "pri_01_25sites_sandbox",

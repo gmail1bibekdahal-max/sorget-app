@@ -4,6 +4,8 @@ import {
   canInviteMember as _canInviteMember,
   canUseCrmIntegrations as _canUseCrmIntegrations,
   verifyRazorpayWebhookSignature as _verifyRazorpayWebhookSignature,
+  planKeyToDbPlanId as _planKeyToDbPlanId,
+  resolvePlanKey as _resolvePlanKey,
 } from "@/src/billing.js";
 
 export interface PlanConfig {
@@ -26,3 +28,5 @@ export const canAddWebsite = _canAddWebsite;
 export const canInviteMember = _canInviteMember;
 export const canUseCrmIntegrations = _canUseCrmIntegrations;
 export const verifyRazorpayWebhookSignature = _verifyRazorpayWebhookSignature;
+export const planKeyToDbPlanId = _planKeyToDbPlanId;
+export const resolvePlanKey = _resolvePlanKey;

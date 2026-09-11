@@ -96,8 +96,6 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
         {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
         {notice && <div className={styles.alertInfo}><span>ℹ</span><span>{notice}</span></div>}
 
-        <Link href={`/dashboard/projects/${project.id}`} className={styles.backLink}>← Back to {project.name}</Link>
-
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Integrations &amp; Webhooks</h1>
           <p className={styles.pageSubtitle}>Connect {project.name} with HubSpot CRM or receive real-time attribution payloads via webhooks.</p>

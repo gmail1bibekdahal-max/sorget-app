@@ -1,10 +1,90 @@
 import crypto from "crypto";
 
 export const PLANS = {
-  // --- Sorget Plans ---
+  // --- Sorget Planning Plans ---
+  "1-site": {
+    id: "1-site",
+    name: "1 Site",
+    priceMonthlyUsd: 29,
+    priceMonthlyInr: 2499,
+    websiteLimit: 1,
+    memberLimit: 2,
+    leadsMonthlyLimit: 100,
+    crmIntegrations: true,
+    customWebhooks: true,
+    prioritySupport: false,
+    trialDays: 14,
+  },
+  "1_site": {
+    id: "1-site",
+    name: "1 Site",
+    priceMonthlyUsd: 29,
+    priceMonthlyInr: 2499,
+    websiteLimit: 1,
+    memberLimit: 2,
+    leadsMonthlyLimit: 100,
+    crmIntegrations: true,
+    customWebhooks: true,
+    prioritySupport: false,
+    trialDays: 14,
+  },
+  "5-sites": {
+    id: "5-sites",
+    name: "5 Sites",
+    priceMonthlyUsd: 99,
+    priceMonthlyInr: 7999,
+    websiteLimit: 5,
+    memberLimit: 10,
+    leadsMonthlyLimit: 1000,
+    crmIntegrations: true,
+    customWebhooks: true,
+    prioritySupport: true,
+    trialDays: 14,
+  },
+  "5_sites": {
+    id: "5-sites",
+    name: "5 Sites",
+    priceMonthlyUsd: 99,
+    priceMonthlyInr: 7999,
+    websiteLimit: 5,
+    memberLimit: 10,
+    leadsMonthlyLimit: 1000,
+    crmIntegrations: true,
+    customWebhooks: true,
+    prioritySupport: true,
+    trialDays: 14,
+  },
+  "25-sites": {
+    id: "25-sites",
+    name: "25 Sites",
+    priceMonthlyUsd: 299,
+    priceMonthlyInr: 24999,
+    websiteLimit: 25,
+    memberLimit: 30,
+    leadsMonthlyLimit: 10000,
+    crmIntegrations: true,
+    customWebhooks: true,
+    prioritySupport: true,
+    trialDays: 14,
+  },
+  "25_sites": {
+    id: "25-sites",
+    name: "25 Sites",
+    priceMonthlyUsd: 299,
+    priceMonthlyInr: 24999,
+    websiteLimit: 25,
+    memberLimit: 30,
+    leadsMonthlyLimit: 10000,
+    crmIntegrations: true,
+    customWebhooks: true,
+    prioritySupport: true,
+    trialDays: 14,
+  },
+
+  // --- Aliases & Backward Compatibility Keys ---
   lite: {
-    id: "lite",
-    name: "Lite",
+    id: "1-site",
+    name: "1 Site",
     priceMonthlyUsd: 29,
     priceMonthlyInr: 2499,
     websiteLimit: 1,
@@ -29,12 +109,12 @@ export const PLANS = {
     trialDays: 14,
   },
   pro: {
-    id: "pro",
-    name: "Professional",
+    id: "5-sites",
+    name: "5 Sites",
     priceMonthlyUsd: 99,
     priceMonthlyInr: 7999,
-    websiteLimit: 1,
-    memberLimit: 5,
+    websiteLimit: 5,
+    memberLimit: 10,
     leadsMonthlyLimit: 1000,
     crmIntegrations: true,
     customWebhooks: true,
@@ -42,12 +122,12 @@ export const PLANS = {
     trialDays: 14,
   },
   professional: {
-    id: "professional",
-    name: "Professional",
+    id: "5-sites",
+    name: "5 Sites",
     priceMonthlyUsd: 99,
     priceMonthlyInr: 7999,
-    websiteLimit: 1,
-    memberLimit: 5,
+    websiteLimit: 5,
+    memberLimit: 10,
     leadsMonthlyLimit: 1000,
     crmIntegrations: true,
     customWebhooks: true,
@@ -75,32 +155,6 @@ export const PLANS = {
     websiteLimit: 10,
     memberLimit: 15,
     leadsMonthlyLimit: 25000,
-    crmIntegrations: true,
-    customWebhooks: true,
-    prioritySupport: true,
-    trialDays: 14,
-  },
-  "25-sites": {
-    id: "25-sites",
-    name: "25 Sites",
-    priceMonthlyUsd: 299,
-    priceMonthlyInr: 24999,
-    websiteLimit: 25,
-    memberLimit: 30,
-    leadsMonthlyLimit: 75000,
-    crmIntegrations: true,
-    customWebhooks: true,
-    prioritySupport: true,
-    trialDays: 14,
-  },
-  "25_sites": {
-    id: "25_sites",
-    name: "25 Sites",
-    priceMonthlyUsd: 299,
-    priceMonthlyInr: 24999,
-    websiteLimit: 25,
-    memberLimit: 30,
-    leadsMonthlyLimit: 75000,
     crmIntegrations: true,
     customWebhooks: true,
     prioritySupport: true,
@@ -173,9 +227,40 @@ export const PLANS = {
   },
 };
 
-export function canAddWebsite(planId = "starter", currentWebsiteCount = 0) {
-  const normalizedKey = String(planId || "starter").toLowerCase().replace(/\s+/g, "-");
-  const plan = PLANS[normalizedKey] || PLANS[planId] || PLANS.starter;
+export function planKeyToDbPlanId(planKey = "") {
+  const norm = String(planKey || "").toLowerCase().replace(/[\s_]+/g, "-");
+  if (norm.startsWith("25-site") || norm === "enterprise") {
+    return "enterprise";
+  }
+  if (norm.startsWith("5-site") || norm === "pro" || norm === "professional" || norm === "growth") {
+    return "growth";
+  }
+  return "starter";
+}
+
+export function resolvePlanKey(sub) {
+  if (!sub) return "1-site";
+
+  // Check stored canonical slug in razorpay_subscription_id
+  const slug = String(sub.razorpay_subscription_id || "").toLowerCase().replace(/[\s_]+/g, "-");
+  if (slug === "1-site" || slug === "5-sites" || slug === "25-sites") {
+    return slug;
+  }
+
+  // Check plan or plan_id
+  const raw = String(sub.plan || sub.plan_id || "").toLowerCase().replace(/[\s_]+/g, "-");
+  if (raw === "25-sites" || raw === "enterprise") {
+    return "25-sites";
+  }
+  if (raw === "5-sites" || raw === "growth" || raw === "pro" || raw === "professional") {
+    return "5-sites";
+  }
+  return "1-site";
+}
+
+export function canAddWebsite(planId = "1-site", currentWebsiteCount = 0) {
+  const resolvedKey = resolvePlanKey(typeof planId === "object" && planId !== null ? planId : { plan_id: planId });
+  const plan = PLANS[resolvedKey] || PLANS[planId] || PLANS["1-site"];
   return currentWebsiteCount < plan.websiteLimit;
 }
 

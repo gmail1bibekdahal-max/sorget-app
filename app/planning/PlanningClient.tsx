@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./Planning.module.css";
 
@@ -14,69 +13,90 @@ interface PlanItem {
   popular?: boolean;
 }
 
-const SINGLE_SITE_PLANS: PlanItem[] = [
-  { id: "lite", name: "Lite", sites: "1 Site", leads: "100 leads/month", price: "$29", period: "per month" },
-  { id: "starter", name: "Starter", sites: "1 Site", leads: "500 leads/month", price: "$49", period: "per month", popular: true },
-  { id: "professional", name: "Professional", sites: "1 Site", leads: "1,000 leads/month", price: "$99", period: "per month" },
+const PLANS_LIST: PlanItem[] = [
+  {
+    id: "1-site",
+    name: "1 Site",
+    sites: "1 Website",
+    leads: "100 leads / month",
+    price: "$29",
+    period: "per month",
+  },
+  {
+    id: "5-sites",
+    name: "5 Sites",
+    sites: "5 Websites",
+    leads: "1,000 leads / month",
+    price: "$99",
+    period: "per month",
+    popular: true,
+  },
+  {
+    id: "25-sites",
+    name: "25 Sites",
+    sites: "25 Websites",
+    leads: "10,000 leads / month",
+    price: "$299",
+    period: "per month",
+  },
 ];
 
-const MULTI_SITE_PLANS: PlanItem[] = [
-  { id: "10-sites", name: "10 Sites", sites: "10 Sites", leads: "Full attribution analytics", price: "$199", period: "per month" },
-  { id: "25-sites", name: "25 Sites", sites: "25 Sites", leads: "Full attribution analytics", price: "$299", period: "per month", popular: true },
-  { id: "50-sites", name: "50 Sites", sites: "50 Sites", leads: "Full attribution analytics", price: "$399", period: "per month" },
-];
+interface PlanningClientProps {
+  currentPlan?: string;
+  returnTo?: string;
+}
 
-export default function PlanningClient() {
+function normalizePlanId(raw: string): string {
+  const p = raw.toLowerCase().replace(/_/g, "-");
+  if (p === "lite" || p === "1-site" || p === "1_site") return "1-site";
+  if (p === "pro" || p === "professional" || p === "5-sites" || p === "5_sites") return "5-sites";
+  if (p === "25-sites" || p === "25_sites") return "25-sites";
+  return p;
+}
+
+export default function PlanningClient({ currentPlan = "", returnTo = "" }: PlanningClientProps) {
   const router = useRouter();
-  const [tab, setTab] = useState<"single" | "multi">("single");
-
-  const plans = tab === "single" ? SINGLE_SITE_PLANS : MULTI_SITE_PLANS;
+  const normalizedCurrent = normalizePlanId(currentPlan);
 
   return (
     <>
-      <div className={styles.toggleGroup}>
-        <button
-          type="button"
-          className={`${styles.toggleBtn} ${tab === "single" ? styles.toggleBtnActive : ""}`}
-          onClick={() => setTab("single")}
-        >
-          Single Site
-        </button>
-        <button
-          type="button"
-          className={`${styles.toggleBtn} ${tab === "multi" ? styles.toggleBtnActive : ""}`}
-          onClick={() => setTab("multi")}
-        >
-          Multiple Sites
-        </button>
-      </div>
-
       <div className={styles.plans}>
-        {plans.map((plan) => (
-          <div
-            key={plan.id}
-            className={`${styles.planCard} ${plan.popular ? styles.planCardPopular : ""}`}
-          >
-            {plan.popular && <span className={styles.popularBadge}>Most Popular</span>}
-            <div className={styles.planName}>{plan.name}</div>
-            <div className={styles.planFeature}>{plan.sites}</div>
-            <div className={styles.planFeature}>{plan.leads}</div>
-            <div className={styles.planFeature} style={{ color: "#059669", fontWeight: 600 }}>
-              14-day free trial
-            </div>
-            <div className={styles.planPrice}>
-              {plan.price} <span>{plan.period}</span>
-            </div>
-            <button
-              type="button"
-              className={styles.btnSelect}
-              onClick={() => router.push(`/planning/${plan.id}`)}
-              id={`select-plan-${plan.id}`}
+        {PLANS_LIST.map((plan) => {
+          const isCurrent = normalizedCurrent === plan.id;
+          const targetUrl = `/planning/${plan.id}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`;
+
+          return (
+            <div
+              key={plan.id}
+              className={`${styles.planCard} ${plan.popular ? styles.planCardPopular : ""}`}
+              style={isCurrent ? { border: "2px solid #059669" } : undefined}
             >
-              Select Plan
-            </button>
-          </div>
-        ))}
+              {isCurrent ? (
+                <span className={styles.popularBadge} style={{ background: "#059669" }}>Active Plan</span>
+              ) : plan.popular ? (
+                <span className={styles.popularBadge}>Most Popular</span>
+              ) : null}
+              <div className={styles.planName}>{plan.name}</div>
+              <div className={styles.planFeature} style={{ fontWeight: 600, color: "#3A313C" }}>{plan.sites}</div>
+              <div className={styles.planFeature}>{plan.leads}</div>
+              <div className={styles.planFeature} style={{ color: "#059669", fontWeight: 600 }}>
+                14-day free trial
+              </div>
+              <div className={styles.planPrice}>
+                {plan.price} <span>{plan.period}</span>
+              </div>
+              <button
+                type="button"
+                className={styles.btnSelect}
+                onClick={() => router.push(targetUrl)}
+                id={`select-plan-${plan.id}`}
+                style={isCurrent ? { background: "#059669", cursor: "pointer" } : undefined}
+              >
+                {isCurrent ? "Current Plan (Manage)" : normalizedCurrent ? "Upgrade Plan" : "Select Plan"}
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       <p className={styles.enterprise}>

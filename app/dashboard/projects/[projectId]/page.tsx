@@ -153,8 +153,6 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
         {sp.success && <div className={styles.alertSuccess}><span>✓</span><span>{sp.success}</span></div>}
         {leadsError && <div className={styles.alertError}><span>⚠️</span><span>Failed to load verification log: {leadsError.message}</span></div>}
 
-        <Link href="/dashboard" className={styles.backLink}>← Back to Websites</Link>
-
         {/* Website Header */}
         <div className={styles.card} style={{ marginBottom: "1.5rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>

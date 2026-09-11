@@ -2,36 +2,55 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { PLANS } from "@/lib/billing";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getOrCreateDefaultWorkspace } from "@/lib/workspaces";
+import { PLANS, resolvePlanKey } from "@/lib/billing";
 import { activateFreeTrial } from "@/app/actions/billing";
 import { getPaddlePriceId, getPaddleConfig } from "@/lib/paddle";
 import SubmitButton from "@/app/components/SubmitButton";
-import PaddlePlaceholderButton from "@/app/components/PaddlePlaceholderButton";
 import styles from "../checkout/Checkout.module.css";
 
 interface PageProps {
   params: Promise<{ plan: string }>;
+  searchParams?: Promise<{ returnTo?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps) {
   const { plan: planParam } = await params;
   const planKey = planParam.toLowerCase().replace(/\s+/g, "-");
-  const plan = PLANS[planKey] || PLANS.starter;
+  const canonicalSelectedKey = resolvePlanKey({ plan_id: planKey, razorpay_subscription_id: planKey });
+  const plan = PLANS[canonicalSelectedKey] || PLANS["1-site"];
   return {
     title: `${plan.name} Plan — Sorget`,
     description: `Complete your setup for Sorget ${plan.name} plan with a 14-day free trial.`,
   };
 }
 
-export default async function SelectedPlanPage({ params }: PageProps) {
+export default async function SelectedPlanPage({ params, searchParams }: PageProps) {
   const { plan: planParam } = await params;
   const planKey = planParam.toLowerCase().replace(/\s+/g, "-");
+  const canonicalSelectedKey = resolvePlanKey({ plan_id: planKey, razorpay_subscription_id: planKey });
+  const sParams = searchParams ? await searchParams : {};
+  const returnTo = sParams.returnTo || "";
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const plan = PLANS[planKey] || PLANS.starter;
+  const workspace = await getOrCreateDefaultWorkspace(supabase, user.id, user.email, user.user_metadata?.full_name);
+  const admin = createAdminClient();
+  const db = admin || supabase;
+  const { data: currentSub } = await db
+    .from("subscriptions")
+    .select("plan_id, razorpay_subscription_id, status")
+    .eq("workspace_id", workspace.id)
+    .maybeSingle();
+
+  const currentPlanKey = currentSub ? resolvePlanKey(currentSub) : "";
+  const isCurrentPlan = currentPlanKey === canonicalSelectedKey;
+  const isUpgrade = Boolean(currentSub && !isCurrentPlan);
+
+  const plan = PLANS[canonicalSelectedKey] || PLANS["1-site"];
   const paddlePriceId = getPaddlePriceId(planKey);
   const paddleConfig = getPaddleConfig();
 
@@ -45,8 +64,6 @@ export default async function SelectedPlanPage({ params }: PageProps) {
     plan.websiteLimit === 1 ? "1 website" : `${plan.websiteLimit} websites`,
     plan.leadsMonthlyLimit >= 1000000
       ? "Custom lead capacity"
-      : plan.websiteLimit > 1
-      ? "Full attribution analytics"
       : `Up to ${plan.leadsMonthlyLimit.toLocaleString()} leads/month`,
     "14-day free trial included",
     "First-touch and multi-touch UTM tracking",
@@ -65,7 +82,7 @@ export default async function SelectedPlanPage({ params }: PageProps) {
       {/* Left: Selected Plan & Payment Actions */}
       <div className={styles.formSide}>
         <div className={styles.card}>
-          <Link href="/planning" className={styles.backLink}>
+          <Link href={`/planning${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className={styles.backLink}>
             ← Back to all plans
           </Link>
 
@@ -143,22 +160,29 @@ export default async function SelectedPlanPage({ params }: PageProps) {
               </a>
             </div>
           ) : (
-            <>
-              {/* Paddle Payment Action (Sandbox configured) */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <PaddlePlaceholderButton
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <form action={activateFreeTrial} style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <input type="hidden" name="plan" value={planKey} />
+                {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
+
+                <SubmitButton
                   id="btn-paddle-checkout"
                   className={styles.btnPrimary}
+                  pendingText="Activating..."
                   style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    textDecoration: "none",
                     background: "#3A313C",
+                    width: "100%",
+                    justifyContent: "center",
                     cursor: "pointer",
                   }}
                   title={`Paddle Price ID: ${paddlePriceId || "sandbox"}`}
-                />
+                >
+                  {isCurrentPlan
+                    ? "Current Active Plan ✓"
+                    : isUpgrade
+                    ? `Upgrade to ${plan.name} (${plan.websiteLimit} Websites)`
+                    : `Continue with ${plan.name} Plan`}
+                </SubmitButton>
 
                 <div
                   style={{
@@ -175,28 +199,24 @@ export default async function SelectedPlanPage({ params }: PageProps) {
                   <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
                 </div>
 
-                {/* 14-Day Free Trial Direct Activation */}
-                <form action={activateFreeTrial} style={{ width: "100%" }}>
-                  <input type="hidden" name="plan" value={planKey} />
-                  <SubmitButton
-                    id="btn-start-free-trial"
-                    className={styles.btnPrimary}
-                    pendingText="Activating..."
-                    style={{
-                      background: "#BB0C68",
-                      width: "100%",
-                      justifyContent: "center",
-                    }}
-                  >
-                    Start 14-Day Free Trial
-                  </SubmitButton>
-                </form>
-              </div>
+                <SubmitButton
+                  id="btn-start-free-trial"
+                  className={styles.btnPrimary}
+                  pendingText="Activating..."
+                  style={{
+                    background: "#BB0C68",
+                    width: "100%",
+                    justifyContent: "center",
+                  }}
+                >
+                  {isCurrentPlan ? "Current Plan Active ✓" : "Start 14-Day Free Trial"}
+                </SubmitButton>
+              </form>
 
               <p style={{ fontSize: "0.8rem", color: "#9ca3af", textAlign: "center", marginTop: "1rem", lineHeight: 1.5 }}>
                 14 days free, then ${plan.priceMonthlyUsd}/mo. No commitment. Cancel anytime before {trialEndStr} to avoid charges.
               </p>
-            </>
+            </div>
           )}
         </div>
       </div>

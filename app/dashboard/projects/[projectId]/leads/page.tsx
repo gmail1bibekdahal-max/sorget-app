@@ -125,11 +125,6 @@ export default async function ProjectLeadsPage({ params, searchParams }: PagePro
 
         <div className={styles.pageHeaderRow}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-              <Link href={`/dashboard/projects/${project.id}`} className={styles.backLink} style={{ margin: 0 }}>
-                ← {project.name}
-              </Link>
-            </div>
             <h1 className={styles.pageTitle}>Captured Leads</h1>
             <p className={styles.pageSubtitle}>
               Attribution sources and touchpoint logs captured for {project.name}.

@@ -6,8 +6,8 @@ import MainNavigation from "@/app/components/MainNavigation";
 import styles from "./Page.module.css";
 
 export const metadata = {
-  title: "Websites — Sorget",
-  description: "Manage your tracked websites and verify incoming attribution submissions.",
+  title: "Dashboard — Sorget",
+  description: "Overview of your tracked websites, attribution metrics, and captured leads.",
 };
 
 interface Project {
@@ -125,7 +125,7 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
 
         <div className={styles.pageHeaderRow}>
           <div>
-            <h1 className={styles.pageTitle}>Websites</h1>
+            <h1 className={styles.pageTitle}>Dashboard</h1>
             <p className={styles.pageSubtitle}>Track attribution across your domains.</p>
           </div>
           <Link href="/dashboard/projects/new" className={styles.btnPrimary}>+ Add Website</Link>
@@ -162,7 +162,6 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
                 <p className={styles.emptyStateText}>Add your first domain to generate a tracking snippet and start capturing visitor sources.</p>
                 <div className={styles.row} style={{ justifyContent: "center" }}>
                   <Link href="/dashboard/projects/new" className={styles.btnPrimary}>Add Website</Link>
-                  <Link href="/dashboard/getting-started" className={styles.btnSecondary}>Setup Guide</Link>
                 </div>
               </div>
             ) : (

@@ -12,7 +12,7 @@ interface PageProps {
 }
 
 export const metadata = {
-  title: "Accept Workspace Invitation — Sorget",
+  title: "Accept Team Invitation — Sorget",
   description: "Join your team on Sorget.",
 };
 

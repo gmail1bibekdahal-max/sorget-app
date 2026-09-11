@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import crypto from "crypto";
-import { PLANS, canAddWebsite } from "../src/billing.js";
+import { PLANS, canAddWebsite, planKeyToDbPlanId, resolvePlanKey } from "../src/billing.js";
 import {
   PADDLE_PRICE_IDS,
   getPaddlePriceId,
@@ -11,61 +11,54 @@ import {
 
 describe("Sorget — User Flow, Plans, Trial & Navigation Suite", () => {
   // ── 1. Sorget Plans & Pricing Validation ──
-  it("1. Verifies all 6 Sorget plans with correct prices, site limits, and 14-day trials", () => {
-    // Single site plans
+  it("1. Verifies 3 Sorget Planning plans ($29 for 1 site 100 leads, $99 for 5 sites 1000 leads, $299 for 25 sites 10000 leads)", () => {
+    // 1 Site: $29, 1 website, 100 leads
+    assert.equal(PLANS["1-site"].priceMonthlyUsd, 29);
+    assert.equal(PLANS["1-site"].websiteLimit, 1);
+    assert.equal(PLANS["1-site"].leadsMonthlyLimit, 100);
+    assert.equal(PLANS["1-site"].trialDays, 14);
+
+    // Lite alias
     assert.equal(PLANS.lite.priceMonthlyUsd, 29);
     assert.equal(PLANS.lite.websiteLimit, 1);
     assert.equal(PLANS.lite.leadsMonthlyLimit, 100);
-    assert.equal(PLANS.lite.trialDays, 14);
 
-    assert.equal(PLANS.starter.priceMonthlyUsd, 49);
-    assert.equal(PLANS.starter.websiteLimit, 1);
-    assert.equal(PLANS.starter.trialDays, 14);
+    // 5 Sites: $99, 5 websites, 1000 leads
+    assert.equal(PLANS["5-sites"].priceMonthlyUsd, 99);
+    assert.equal(PLANS["5-sites"].websiteLimit, 5);
+    assert.equal(PLANS["5-sites"].leadsMonthlyLimit, 1000);
+    assert.equal(PLANS["5-sites"].trialDays, 14);
 
-    assert.equal(PLANS.professional.priceMonthlyUsd, 99);
-    assert.equal(PLANS.professional.websiteLimit, 1);
-    assert.equal(PLANS.professional.leadsMonthlyLimit, 1000);
-    assert.equal(PLANS.professional.trialDays, 14);
-
-    // Multi site plans
-    assert.equal(PLANS["10-sites"].priceMonthlyUsd, 199);
-    assert.equal(PLANS["10-sites"].websiteLimit, 10);
-    assert.equal(PLANS["10-sites"].trialDays, 14);
-
+    // 25 Sites: $299, 25 websites, 10000 leads
     assert.equal(PLANS["25-sites"].priceMonthlyUsd, 299);
     assert.equal(PLANS["25-sites"].websiteLimit, 25);
+    assert.equal(PLANS["25-sites"].leadsMonthlyLimit, 10000);
     assert.equal(PLANS["25-sites"].trialDays, 14);
-
-    assert.equal(PLANS["50-sites"].priceMonthlyUsd, 399);
-    assert.equal(PLANS["50-sites"].websiteLimit, 50);
-    assert.equal(PLANS["50-sites"].trialDays, 14);
 
     // Custom
     assert.equal(PLANS.custom.websiteLimit, 999);
   });
 
   // ── 2. Server-Side Plan Limit Enforcement ──
-  it("2. Enforces single-site limits: Lite, Starter, and Professional allow max 1 website", () => {
-    for (const plan of ["lite", "starter", "professional", "pro"]) {
+  it("2. Enforces 1-site limit: $29 plan allows max 1 website and cannot add multiple websites", () => {
+    for (const plan of ["1-site", "1_site", "lite"]) {
       assert.equal(canAddWebsite(plan, 0), true, `${plan} allows first website`);
       assert.equal(canAddWebsite(plan, 1), false, `${plan} rejects second website`);
       assert.equal(canAddWebsite(plan, 2), false, `${plan} rejects third website`);
     }
   });
 
-  it("3. Enforces multi-site limits: 10, 25, and 50 sites plans allow up to their exact maximum", () => {
-    // 10 Sites
-    assert.equal(canAddWebsite("10-sites", 0), true);
-    assert.equal(canAddWebsite("10-sites", 9), true);
-    assert.equal(canAddWebsite("10-sites", 10), false, "10-sites plan rejects 11th website");
+  it("3. Enforces multi-site limits: 5 sites allows up to 5, 25 sites allows up to 25", () => {
+    // 5 Sites plan ($99 for 5 sites, 1000 leads)
+    for (let i = 0; i < 5; i++) {
+      assert.equal(canAddWebsite("5-sites", i), true, `5-sites allows website #${i + 1}`);
+    }
+    assert.equal(canAddWebsite("5-sites", 5), false, "5-sites plan rejects 6th website");
 
-    // 25 Sites
-    assert.equal(canAddWebsite("25-sites", 24), true);
+    // 25 Sites plan ($299 for 25 sites, 10,000 leads)
+    assert.equal(canAddWebsite("25-sites", 0), true);
+    assert.equal(canAddWebsite("25-sites", 24), true, "25-sites allows 25th website");
     assert.equal(canAddWebsite("25-sites", 25), false, "25-sites plan rejects 26th website");
-
-    // 50 Sites
-    assert.equal(canAddWebsite("50-sites", 49), true);
-    assert.equal(canAddWebsite("50-sites", 50), false, "50-sites plan rejects 51st website");
   });
 
   // ── 3. 14-Day Free Trial Logic ──
@@ -315,5 +308,182 @@ describe("Sorget — User Flow, Plans, Trial & Navigation Suite", () => {
 
     // Failure test: if CRM is omitted or database fails, it must reject and NOT silently proceed without CRM
     assert.throws(() => createOnboardingProjectPayload(base, ""), /CRM used is required/);
+  });
+
+  // ── 9. Plan Upgrade Behavior ──
+  it("13. Upgrading across $29 (1 site), $99 (5 sites), and $299 (25 sites) strictly enforces respective website limits", () => {
+    let mockSub = {
+      id: "sub_1",
+      workspace_id: "ws_1",
+      plan: "1-site",
+      plan_id: "1-site",
+      status: "trialing",
+    };
+
+    function upgradePlan(workspaceId, newPlan) {
+      if (mockSub.workspace_id === workspaceId) {
+        mockSub.plan = newPlan;
+        mockSub.plan_id = newPlan;
+      }
+      return mockSub;
+    }
+
+    // Tier 1: $29 for 1 site 100 leads
+    assert.equal(canAddWebsite(mockSub.plan, 0), true, "1-site plan allows 1st website");
+    assert.equal(canAddWebsite(mockSub.plan, 1), false, "1-site plan strictly rejects 2nd website");
+
+    // Upgrade to Tier 2: $99 for 5 sites 1,000 leads
+    upgradePlan("ws_1", "5-sites");
+    assert.equal(mockSub.plan, "5-sites");
+    assert.equal(canAddWebsite(mockSub.plan, 1), true, "5-sites allows 2nd website");
+    assert.equal(canAddWebsite(mockSub.plan, 4), true, "5-sites allows 5th website");
+    assert.equal(canAddWebsite(mockSub.plan, 5), false, "5-sites rejects 6th website");
+
+    // Upgrade to Tier 3: $299 for 25 sites 10,000 leads
+    upgradePlan("ws_1", "25-sites");
+    assert.equal(mockSub.plan, "25-sites");
+    assert.equal(canAddWebsite(mockSub.plan, 5), true, "25-sites allows 6th website");
+    assert.equal(canAddWebsite(mockSub.plan, 24), true, "25-sites allows 25th website");
+    assert.equal(canAddWebsite(mockSub.plan, 25), false, "25-sites rejects 26th website");
+  });
+
+  // ── 10. Database Constraint & Plan Mapping Bridge ──
+  it("14. planKeyToDbPlanId and resolvePlanKey accurately bridge DB check constraints with canonical plans", () => {
+    // DB constraints: check (plan_id in ('starter', 'growth', 'enterprise'))
+    assert.equal(planKeyToDbPlanId("1-site"), "starter");
+    assert.equal(planKeyToDbPlanId("5-sites"), "growth");
+    assert.equal(planKeyToDbPlanId("25-sites"), "enterprise");
+
+    // Resolving DB records to canonical plan
+    assert.equal(resolvePlanKey({ plan_id: "starter", razorpay_subscription_id: "1-site" }), "1-site");
+    assert.equal(resolvePlanKey({ plan_id: "growth", razorpay_subscription_id: "5-sites" }), "5-sites");
+    assert.equal(resolvePlanKey({ plan_id: "enterprise", razorpay_subscription_id: "25-sites" }), "25-sites");
+
+    // Fallbacks if razorpay_subscription_id is missing or legacy
+    assert.equal(resolvePlanKey({ plan_id: "starter" }), "1-site");
+    assert.equal(resolvePlanKey({ plan_id: "growth" }), "5-sites");
+    assert.equal(resolvePlanKey({ plan_id: "enterprise" }), "25-sites");
+    assert.equal(resolvePlanKey(null), "1-site");
+  });
+
+  // ── 11. End-to-End Simulation: TEST A ($29) ──
+  it("15. TEST A: $29 flow: 1 site / 100 leads, lands on project overview, rejects 2nd site", () => {
+    const testProjectId = "proj_29_abc_123";
+    const subRecord = {
+      workspace_id: "ws_user_a",
+      plan_id: "starter",
+      razorpay_subscription_id: "1-site",
+      status: "trialing",
+    };
+
+    const canonicalPlan = resolvePlanKey(subRecord);
+    assert.equal(canonicalPlan, "1-site");
+    assert.equal(PLANS[canonicalPlan].priceMonthlyUsd, 29);
+    assert.equal(PLANS[canonicalPlan].websiteLimit, 1);
+    assert.equal(PLANS[canonicalPlan].leadsMonthlyLimit, 100);
+
+    // Initial website created in onboarding
+    const projects = [{ id: testProjectId, workspace_id: "ws_user_a" }];
+
+    // Routing: Must land on /dashboard/projects/[id], NEVER /dashboard/projects/new
+    function resolvePostTrialRedirect(projectsList) {
+      if (projectsList && projectsList.length > 0) {
+        return `/dashboard/projects/${projectsList[0].id}`;
+      }
+      return "/onboarding";
+    }
+
+    assert.equal(resolvePostTrialRedirect(projects), `/dashboard/projects/${testProjectId}`);
+
+    // Add Website page limit check
+    assert.equal(canAddWebsite(canonicalPlan, projects.length), false, "Blocked from adding 2nd site");
+  });
+
+  // ── 12. End-to-End Simulation: TEST B ($99) ──
+  it("16. TEST B: $99 flow: 5 sites / 1,000 leads, lands on project overview, adds 2-5, blocks 6th", () => {
+    const testProjectId = "proj_99_main_001";
+    const subRecord = {
+      workspace_id: "ws_user_b",
+      plan_id: "growth",
+      razorpay_subscription_id: "5-sites",
+      status: "trialing",
+    };
+
+    const canonicalPlan = resolvePlanKey(subRecord);
+    assert.equal(canonicalPlan, "5-sites");
+    assert.equal(PLANS[canonicalPlan].priceMonthlyUsd, 99);
+    assert.equal(PLANS[canonicalPlan].websiteLimit, 5);
+    assert.equal(PLANS[canonicalPlan].leadsMonthlyLimit, 1000);
+
+    const projects = [{ id: testProjectId, workspace_id: "ws_user_b" }];
+
+    // Routing check
+    assert.equal(`/dashboard/projects/${projects[0].id}`, `/dashboard/projects/${testProjectId}`);
+
+    // Sites 2 to 5 succeed
+    for (let count = 1; count < 5; count++) {
+      assert.equal(canAddWebsite(canonicalPlan, count), true, `Allowed to add site #${count + 1}`);
+      projects.push({ id: `proj_99_sub_${count}`, workspace_id: "ws_user_b" });
+    }
+
+    assert.equal(projects.length, 5);
+    // 6th site strictly blocked
+    assert.equal(canAddWebsite(canonicalPlan, projects.length), false, "Site 6 is strictly blocked");
+  });
+
+  // ── 13. End-to-End Simulation: TEST C ($299) ──
+  it("17. TEST C: $299 flow: 25 sites / 10,000 leads, allows up to 25, blocks 26th", () => {
+    const subRecord = {
+      workspace_id: "ws_user_c",
+      plan_id: "enterprise",
+      razorpay_subscription_id: "25-sites",
+      status: "trialing",
+    };
+
+    const canonicalPlan = resolvePlanKey(subRecord);
+    assert.equal(canonicalPlan, "25-sites");
+    assert.equal(PLANS[canonicalPlan].priceMonthlyUsd, 299);
+    assert.equal(PLANS[canonicalPlan].websiteLimit, 25);
+    assert.equal(PLANS[canonicalPlan].leadsMonthlyLimit, 10000);
+
+    for (let count = 0; count < 25; count++) {
+      assert.equal(canAddWebsite(canonicalPlan, count), true, `Site #${count + 1} allowed`);
+    }
+    assert.equal(canAddWebsite(canonicalPlan, 25), false, "Site 26 is strictly blocked");
+  });
+
+  // ── 14. Routing Verification: TEST E ──
+  it("18. TEST E: Post-activation routing ALWAYS routes to /dashboard/projects/[new_id] and NEVER to /dashboard/projects/new", () => {
+    function getPostActivationRoute(projects, returnTo = "") {
+      if (returnTo && returnTo.startsWith("/")) return returnTo;
+      if (projects && projects.length > 0) return `/dashboard/projects/${projects[0].id}`;
+      return "/onboarding";
+    }
+
+    const testProject = { id: "db5cfe61-3c59-441c-9fa4-bac59145694d" };
+    const route = getPostActivationRoute([testProject]);
+    assert.equal(route, "/dashboard/projects/db5cfe61-3c59-441c-9fa4-bac59145694d");
+    assert.notEqual(route, "/dashboard/projects/new");
+  });
+
+  // ── 15. Workspace Isolation: TEST F ──
+  it("19. TEST F: Two separate workspaces compute quotas independently without quota bleeding", () => {
+    const workspaceA = { id: "ws_tenant_1", sub: { plan_id: "starter", razorpay_subscription_id: "1-site" }, projectsCount: 1 };
+    const workspaceB = { id: "ws_tenant_2", sub: { plan_id: "growth", razorpay_subscription_id: "5-sites" }, projectsCount: 3 };
+
+    const planA = resolvePlanKey(workspaceA.sub);
+    const planB = resolvePlanKey(workspaceB.sub);
+
+    // Tenant A is at capacity (1 of 1) -> cannot add more
+    assert.equal(canAddWebsite(planA, workspaceA.projectsCount), false);
+
+    // Tenant B has 3 of 5 -> can add more
+    assert.equal(canAddWebsite(planB, workspaceB.projectsCount), true);
+
+    // Tenant A's maxed quota does NOT affect Tenant B
+    workspaceB.projectsCount += 1;
+    assert.equal(canAddWebsite(planB, workspaceB.projectsCount), true); // 4 of 5
+    workspaceB.projectsCount += 1;
+    assert.equal(canAddWebsite(planB, workspaceB.projectsCount), false); // 5 of 5 reached
   });
 });

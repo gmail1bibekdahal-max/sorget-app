@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { generateTrackingId } from "@/lib/tracking-id";
 import { getOrCreateDefaultWorkspace, healOrphanProjects } from "@/lib/workspaces";
 
-import { canAddWebsite, PLANS } from "@/lib/billing";
+import { canAddWebsite, PLANS, resolvePlanKey } from "@/lib/billing";
 
 /**
  * Onboarding First Website Creation.
@@ -117,27 +118,30 @@ export async function createProject(formData: FormData) {
     user.user_metadata?.full_name
   );
 
-  // ── SERVER-SIDE PLAN LIMIT ENFORCEMENT ──
-  const { data: sub } = await supabase
-    .from("subscriptions")
-    .select("plan, plan_id, status")
-    .eq("workspace_id", workspace.id)
-    .single();
+  const admin = createAdminClient();
+  const db = admin || supabase;
 
-  const activePlanKey = sub?.plan || sub?.plan_id || "starter";
-  const { count: currentCount } = await supabase
+  // ── SERVER-SIDE PLAN LIMIT ENFORCEMENT ──
+  const { data: sub } = await db
+    .from("subscriptions")
+    .select("plan_id, razorpay_subscription_id, status")
+    .eq("workspace_id", workspace.id)
+    .maybeSingle();
+
+  const activePlanKey = resolvePlanKey(sub);
+  const { count: currentCount } = await db
     .from("projects")
     .select("id", { count: "exact", head: true })
     .eq("workspace_id", workspace.id);
 
   const websiteCount = currentCount ?? 0;
   if (!canAddWebsite(activePlanKey, websiteCount)) {
-    const planConfig = PLANS[activePlanKey] || PLANS.starter;
+    const planConfig = PLANS[activePlanKey] || PLANS["1-site"];
     const maxWebsites = planConfig.websiteLimit || 1;
     redirect(
       "/dashboard/projects/new?error=" +
         encodeURIComponent(
-          `This plan supports ${maxWebsites} website${maxWebsites === 1 ? "" : "s"}. Upgrade your plan to add another website.`
+          `Your current ${planConfig.name} plan supports up to ${maxWebsites} website${maxWebsites === 1 ? "" : "s"}. Upgrade your plan to add another website.`
         )
     );
   }

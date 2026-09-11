@@ -282,7 +282,7 @@
 }
 
 @media (max-width: 600px) {
-  .plans { flex-direction: column; }
+  .plans { grid-template-columns: 1fr; }
 }
 
 
