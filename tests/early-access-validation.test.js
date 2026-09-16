@@ -62,7 +62,8 @@ describe("Sorget — Early Access & Validation Messaging Suite", () => {
     assert.equal(plan299.leadsMonthlyLimit, 10000);
   });
 
-  it("4. Simulates early-access email submission: persists email & plan into subscription architecture and routes to dashboard", () => {
+  it("4. Simulates early-access email submission: stores in early_access table, keeps subscriptions clean, and avoids polluting leads", () => {
+    const mockEarlyAccess = [];
     const mockSubscriptions = [];
     const mockLeads = [];
     const mockProjects = [{ id: "proj_101", workspace_id: "ws_test_1" }];
@@ -71,42 +72,69 @@ describe("Sorget — Early Access & Validation Messaging Suite", () => {
       const canonicalPlan = resolvePlanKey({ plan_id: selectedPlan });
       const dbPlanId = planKeyToDbPlanId(canonicalPlan);
 
-      // Save into subscription architecture
-      const sub = {
-        workspace_id: workspaceId,
-        plan_id: dbPlanId,
-        razorpay_subscription_id: canonicalPlan,
-        razorpay_customer_id: email,
-        status: "trialing",
-      };
-      mockSubscriptions.push(sub);
-
-      // Record lead
-      if (mockProjects.length > 0) {
-        mockLeads.push({
-          project_id: mockProjects[0].id,
+      // 1. Dedicated early_access table storage with duplicate prevention
+      const existingEAIndex = mockEarlyAccess.findIndex((ea) => ea.workspace_id === workspaceId);
+      if (existingEAIndex >= 0) {
+        mockEarlyAccess[existingEAIndex].email = email;
+        mockEarlyAccess[existingEAIndex].selected_plan = canonicalPlan;
+      } else {
+        mockEarlyAccess.push({
+          id: `ea_${Date.now()}`,
+          workspace_id: workspaceId,
           email,
-          channel: "Early Access",
-          campaign: canonicalPlan,
+          selected_plan: canonicalPlan,
         });
       }
 
-      // Preserves intended flow: return dashboard destination
+      // 2. Subscriptions only handles subscription/trial state (NEVER razorpay_customer_id = email)
+      const existingSubIndex = mockSubscriptions.findIndex((s) => s.workspace_id === workspaceId);
+      if (existingSubIndex >= 0) {
+        mockSubscriptions[existingSubIndex].plan_id = dbPlanId;
+        mockSubscriptions[existingSubIndex].razorpay_subscription_id = canonicalPlan;
+        mockSubscriptions[existingSubIndex].status = "trialing";
+      } else {
+        mockSubscriptions.push({
+          workspace_id: workspaceId,
+          plan_id: dbPlanId,
+          razorpay_subscription_id: canonicalPlan,
+          razorpay_customer_id: null, // Clean! Never set to email
+          status: "trialing",
+        });
+      }
+
+      // 3. Leads table is NEVER polluted with early-access submissions
+      // Leads remain 100% reserved for actual website tracking leads
+
       return `/dashboard/projects/${mockProjects[0].id}`;
     }
 
-    const destination = handleEarlyAccessSubmission("ws_test_1", "founder@example.com", "5-sites");
+    // First submission
+    const destination1 = handleEarlyAccessSubmission("ws_test_1", "founder@example.com", "5-sites");
+    assert.equal(destination1, "/dashboard/projects/proj_101");
+    assert.equal(mockEarlyAccess.length, 1);
+    assert.equal(mockEarlyAccess[0].email, "founder@example.com");
+    assert.equal(mockEarlyAccess[0].selected_plan, "5-sites");
 
-    assert.equal(destination, "/dashboard/projects/proj_101");
+    // Check subscription is clean
     assert.equal(mockSubscriptions.length, 1);
-    assert.equal(mockSubscriptions[0].razorpay_customer_id, "founder@example.com");
+    assert.equal(mockSubscriptions[0].razorpay_customer_id, null, "razorpay_customer_id must NOT contain email");
     assert.equal(mockSubscriptions[0].razorpay_subscription_id, "5-sites");
     assert.equal(mockSubscriptions[0].status, "trialing");
-    assert.equal(mockLeads.length, 1);
-    assert.equal(mockLeads[0].email, "founder@example.com");
+
+    // Check leads table was not polluted
+    assert.equal(mockLeads.length, 0, "leads table must NOT contain early access entries");
+
+    // Duplicate submission for same workspace: updates in place, prevents duplicates
+    handleEarlyAccessSubmission("ws_test_1", "founder_updated@example.com", "25-sites");
+    assert.equal(mockEarlyAccess.length, 1, "Duplicate early access submissions must not create duplicate rows");
+    assert.equal(mockEarlyAccess[0].email, "founder_updated@example.com");
+    assert.equal(mockEarlyAccess[0].selected_plan, "25-sites");
+    assert.equal(mockSubscriptions.length, 1);
+    assert.equal(mockSubscriptions[0].razorpay_subscription_id, "25-sites");
+    assert.equal(mockSubscriptions[0].razorpay_customer_id, null);
   });
 
-  it("5. Simulates free-trial activation: persists selected plan & trialing status and routes to dashboard", () => {
+  it("5. Simulates free-trial activation: persists selected plan & trialing status without touching early_access or leads", () => {
     const mockSubscriptions = [];
     const mockProjects = [{ id: "proj_202", workspace_id: "ws_test_2" }];
 
@@ -118,6 +146,7 @@ describe("Sorget — Early Access & Validation Messaging Suite", () => {
         workspace_id: workspaceId,
         plan_id: dbPlanId,
         razorpay_subscription_id: canonicalPlan,
+        razorpay_customer_id: null,
         status: "trialing",
       };
       mockSubscriptions.push(sub);
@@ -131,6 +160,7 @@ describe("Sorget — Early Access & Validation Messaging Suite", () => {
     assert.equal(mockSubscriptions.length, 1);
     assert.equal(mockSubscriptions[0].razorpay_subscription_id, "25-sites");
     assert.equal(mockSubscriptions[0].plan_id, "enterprise");
+    assert.equal(mockSubscriptions[0].razorpay_customer_id, null);
     assert.equal(mockSubscriptions[0].status, "trialing");
   });
 });

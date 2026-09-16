@@ -1,11 +1,8 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { buildHubSpotOAuthUrl, generateOAuthState } from "@/lib/crm";
 import { createWebhook, deleteWebhook } from "@/app/actions/webhooks";
 import { getOrCreateDefaultWorkspace } from "@/lib/workspaces";
-import { sortProjectsCanonically } from "@/lib/projects";
-import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../../../Page.module.css";
 
 interface PageProps {
@@ -28,18 +25,13 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
 
   const [
     { data: allProjects },
-    { data: memberRows },
     { data: webhooks },
   ] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, name, workspace_id, created_at")
+      .select("id, name, workspace_id, created_at, workspaces(crm_connections(is_active, portal_id, token_expires_at, scopes))")
       .order("created_at", { ascending: true })
       .order("id", { ascending: true }),
-    supabase
-      .from("workspace_members")
-      .select("role, workspaces(id, name, slug)")
-      .eq("user_id", user.id),
     supabase
       .from("webhooks")
       .select("*")
@@ -56,18 +48,17 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
     project.workspace_id = ws.id;
   }
 
-  const userWorkspaces = (memberRows ?? [])
-    .filter((r: any) => r.workspaces)
-    .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
+  const rawConnections = (project as any).workspaces?.crm_connections;
+  let hubspotConnection: { is_active: boolean; portal_id?: string | null; token_expires_at?: string | null; scopes?: string | null } | null =
+    Array.isArray(rawConnections) ? rawConnections.find((c: any) => c.is_active) ?? rawConnections[0] ?? null : null;
 
-  let hubspotConnection: { is_active: boolean; portal_id?: string | null; token_expires_at?: string | null; scopes?: string | null } | null = null;
-  if (project.workspace_id) {
+  if (!hubspotConnection && project.workspace_id) {
     const { data: crmConn } = await supabase
       .from("crm_connections")
       .select("is_active, portal_id, token_expires_at, scopes")
       .eq("workspace_id", project.workspace_id)
       .eq("provider", "hubspot")
-      .single();
+      .maybeSingle();
     hubspotConnection = crmConn ?? null;
   }
 
@@ -83,22 +74,11 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
     hubspotOAuthUrl = buildHubSpotOAuthUrl(clientId, redirectUri, state);
   }
 
-  const projectNavList = sortProjectsCanonically(allProjects ?? []);
-
   return (
-    <div className={styles.layout}>
-      <MainNavigation
-        userEmail={user.email}
-        workspaces={userWorkspaces}
-        activeWorkspaceId={project.workspace_id || undefined}
-        projects={projectNavList}
-        activeProjectId={project.id}
-      />
-
-      <main className={styles.main}>
-        {success && <div className={styles.alertSuccess}><span>✓</span><span>{success}</span></div>}
-        {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
-        {notice && <div className={styles.alertInfo}><span>ℹ</span><span>{notice}</span></div>}
+    <>
+      {success && <div className={styles.alertSuccess}><span>✓</span><span>{success}</span></div>}
+      {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
+      {notice && <div className={styles.alertInfo}><span>ℹ</span><span>{notice}</span></div>}
 
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Integrations &amp; Webhooks</h1>
@@ -210,7 +190,6 @@ export default async function IntegrationsPage({ params, searchParams }: PagePro
             </div>
           </div>
         </div>
-      </main>
-    </div>
+    </>
   );
 }

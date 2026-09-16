@@ -153,20 +153,55 @@ export async function submitEarlyAccess(formData: FormData) {
 
   const { data: existingSub } = await db
     .from("subscriptions")
-    .select("id, status, plan_id, razorpay_subscription_id")
+    .select("id, status, plan_id, razorpay_subscription_id, razorpay_customer_id")
     .eq("workspace_id", workspace.id)
     .maybeSingle();
 
   const now = new Date();
   const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
+  // 1. Record / update early access email in the dedicated early_access table
+  try {
+    const { data: existingEA } = await db
+      .from("early_access")
+      .select("id")
+      .eq("workspace_id", workspace.id)
+      .maybeSingle();
+
+    if (existingEA) {
+      // Prevent duplicate records for the same workspace: update in-place
+      await db
+        .from("early_access")
+        .update({
+          email: submittedEmail,
+          selected_plan: canonicalPlan,
+        })
+        .eq("id", existingEA.id);
+    } else {
+      await db.from("early_access").insert([
+        {
+          workspace_id: workspace.id,
+          email: submittedEmail,
+          selected_plan: canonicalPlan,
+        },
+      ]);
+    }
+  } catch (eaErr) {
+    console.error("[submitEarlyAccess] early_access table error:", eaErr);
+  }
+
+  // 2. Keep subscriptions responsible ONLY for subscription/trial state
   if (existingSub) {
     const updatePayload: Record<string, any> = {
       plan_id: dbPlanId,
       razorpay_subscription_id: canonicalPlan,
-      razorpay_customer_id: submittedEmail,
       updated_at: now.toISOString(),
     };
+
+    // Clean out any legacy email mistakenly saved in razorpay_customer_id
+    if (existingSub.razorpay_customer_id && existingSub.razorpay_customer_id.includes("@")) {
+      updatePayload.razorpay_customer_id = null;
+    }
 
     if (existingSub.status !== "active" && existingSub.status !== "trialing") {
       updatePayload.status = "trialing";
@@ -180,7 +215,7 @@ export async function submitEarlyAccess(formData: FormData) {
       .eq("id", existingSub.id);
 
     if (updateError) {
-      console.error("[submitEarlyAccess] Update error:", updateError.message);
+      console.error("[submitEarlyAccess] Subscription update error:", updateError.message);
     }
   } else {
     const { error: insertError } = await db.from("subscriptions").insert([
@@ -188,7 +223,6 @@ export async function submitEarlyAccess(formData: FormData) {
         workspace_id: workspace.id,
         plan_id: dbPlanId,
         razorpay_subscription_id: canonicalPlan,
-        razorpay_customer_id: submittedEmail,
         status: "trialing",
         current_period_start: now.toISOString(),
         current_period_end: trialEnd.toISOString(),
@@ -197,35 +231,8 @@ export async function submitEarlyAccess(formData: FormData) {
     ]);
 
     if (insertError) {
-      console.error("[submitEarlyAccess] Insert error:", insertError.message);
+      console.error("[submitEarlyAccess] Subscription insert error:", insertError.message);
     }
-  }
-
-  // Attempt to log early access lead record if workspace has projects
-  try {
-    const { data: firstProj } = await db
-      .from("projects")
-      .select("id")
-      .eq("workspace_id", workspace.id)
-      .order("created_at", { ascending: true })
-      .order("id", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (firstProj) {
-      await db.from("leads").insert([
-        {
-          project_id: firstProj.id,
-          email: submittedEmail,
-          name: user.user_metadata?.full_name || "Early Access Applicant",
-          channel: "Early Access",
-          source: "planning_page",
-          campaign: canonicalPlan,
-        },
-      ]);
-    }
-  } catch (leadErr) {
-    console.warn("[submitEarlyAccess] Lead record creation fallback:", leadErr);
   }
 
   revalidatePath("/dashboard");

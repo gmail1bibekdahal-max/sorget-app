@@ -515,3 +515,52 @@ create policy "crm_sync_log_member_select" on crm_sync_log
       and wm.user_id = auth.uid()
     )
   );
+
+-- ---------------------------------------------------------------------------
+-- 10. EARLY ACCESS (Waitlist / Early Access Validation)
+-- ---------------------------------------------------------------------------
+
+create table if not exists early_access (
+  id            uuid primary key default gen_random_uuid(),
+  email         text not null,
+  workspace_id  uuid not null references workspaces(id) on delete cascade,
+  selected_plan text not null,
+  created_at    timestamptz not null default now(),
+  constraint early_access_workspace_unique unique (workspace_id)
+);
+
+create index if not exists idx_early_access_workspace_id on early_access(workspace_id);
+create index if not exists idx_early_access_email on early_access(email);
+
+alter table early_access enable row level security;
+
+drop policy if exists "early_access_workspace_member_select" on early_access;
+create policy "early_access_workspace_member_select" on early_access
+  for select using (
+    exists (
+      select 1 from workspace_members wm
+      where wm.workspace_id = early_access.workspace_id
+      and wm.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "early_access_workspace_member_insert" on early_access;
+create policy "early_access_workspace_member_insert" on early_access
+  for insert with check (
+    exists (
+      select 1 from workspace_members wm
+      where wm.workspace_id = early_access.workspace_id
+      and wm.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "early_access_workspace_member_update" on early_access;
+create policy "early_access_workspace_member_update" on early_access
+  for update using (
+    exists (
+      select 1 from workspace_members wm
+      where wm.workspace_id = early_access.workspace_id
+      and wm.user_id = auth.uid()
+    )
+  );
+

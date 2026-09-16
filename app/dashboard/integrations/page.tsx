@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { buildHubSpotOAuthUrl, generateOAuthState } from "@/lib/crm";
 import { createWebhook, deleteWebhook } from "@/app/actions/webhooks";
 import { sortProjectsCanonically } from "@/lib/projects";
-import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../Page.module.css";
 
 export const metadata = {
@@ -24,36 +23,38 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) redirect("/login");
 
-  const { data: memberRows } = await supabase
-    .from("workspace_members")
-    .select("role, workspaces(id, name, slug)")
-    .eq("user_id", user.id);
+  const [
+    { data: rawProjects },
+  ] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("id, name, website, tracking_id, workspace_id, created_at, workspaces(crm_connections(is_active, portal_id, token_expires_at, scopes))")
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true }),
+  ]);
 
-  const userWorkspaces = (memberRows ?? [])
-    .filter((r: any) => r.workspaces)
-    .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
+  const projectList = sortProjectsCanonically(rawProjects ?? []);
+  const activeProject = projectList.find((p: any) => p.id === selectedProjectId) || projectList[0] || null;
 
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("id, name, website, tracking_id, workspace_id, created_at")
-    .order("created_at", { ascending: true })
-    .order("id", { ascending: true });
+  const [
+    { data: webhooks },
+  ] = await Promise.all([
+    activeProject
+      ? supabase.from("webhooks").select("*").eq("project_id", activeProject.id).order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+  ]);
 
-  const projectList = sortProjectsCanonically(projects ?? []);
-  const activeProject = projectList.find((p) => p.id === selectedProjectId) || projectList[0] || null;
+  const rawConnections = (activeProject as any)?.workspaces?.crm_connections;
+  let hubspotConnection: { is_active: boolean; portal_id?: string | null; token_expires_at?: string | null; scopes?: string | null } | null =
+    Array.isArray(rawConnections) ? rawConnections.find((c: any) => c.is_active) ?? rawConnections[0] ?? null : null;
 
-  const { data: webhooks } = activeProject
-    ? await supabase.from("webhooks").select("*").eq("project_id", activeProject.id).order("created_at", { ascending: false })
-    : { data: [] };
-
-  let hubspotConnection: { is_active: boolean; portal_id?: string | null; token_expires_at?: string | null; scopes?: string | null } | null = null;
-  if (activeProject?.workspace_id) {
+  if (!hubspotConnection && activeProject?.workspace_id) {
     const { data: crmConn } = await supabase
       .from("crm_connections")
       .select("is_active, portal_id, token_expires_at, scopes")
       .eq("workspace_id", activeProject.workspace_id)
       .eq("provider", "hubspot")
-      .single();
+      .maybeSingle();
     hubspotConnection = crmConn ?? null;
   }
 
@@ -70,19 +71,10 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
   }
 
   return (
-    <div className={styles.layout}>
-      <MainNavigation
-        userEmail={user.email}
-        workspaces={userWorkspaces}
-        activeWorkspaceId={activeProject?.workspace_id || undefined}
-        projects={projectList}
-        activeProjectId={activeProject?.id}
-      />
-
-      <main className={styles.main}>
-        {success && <div className={styles.alertSuccess}><span>✓</span><span>{success}</span></div>}
-        {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
-        {notice && <div className={styles.alertInfo}><span>ℹ</span><span>{notice}</span></div>}
+    <>
+      {success && <div className={styles.alertSuccess}><span>✓</span><span>{success}</span></div>}
+      {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
+      {notice && <div className={styles.alertInfo}><span>ℹ</span><span>{notice}</span></div>}
 
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Integrations</h1>
@@ -211,7 +203,6 @@ export default async function GlobalIntegrationsPage({ searchParams }: PageProps
             )}
           </div>
         </div>
-      </main>
-    </div>
+    </>
   );
 }

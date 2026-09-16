@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CopyButton from "@/app/components/CopyButton";
-import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../Page.module.css";
 
 export const metadata = {
@@ -24,13 +23,8 @@ export default async function SupportPage() {
   if (userError || !user) redirect("/login");
 
   const [
-    { data: memberRows },
     { data: allProjects },
   ] = await Promise.all([
-    supabase
-      .from("workspace_members")
-      .select("role, workspaces(id, name, slug)")
-      .eq("user_id", user.id),
     supabase
       .from("projects")
       .select("id, name, created_at")
@@ -38,19 +32,8 @@ export default async function SupportPage() {
       .order("id", { ascending: true }),
   ]);
 
-  const userWorkspaces = (memberRows ?? [])
-    .filter((r: any) => r.workspaces)
-    .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
-
   return (
-    <div className={styles.layout}>
-      <MainNavigation
-        userEmail={user.email}
-        workspaces={userWorkspaces}
-        projects={allProjects ?? []}
-      />
-
-      <main className={styles.main}>
+    <>
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Support &amp; Documentation</h1>
           <p className={styles.pageSubtitle}>Guides, hidden form field references, and troubleshooting help for Sorget.</p>
@@ -137,7 +120,6 @@ export default async function SupportPage() {
             <a href="mailto:support@sorget.com" className={styles.btnSecondary}>Email Support (support@sorget.com)</a>
           </div>
         </div>
-      </main>
-    </div>
+    </>
   );
 }

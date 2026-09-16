@@ -3,7 +3,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { sortProjectsCanonically } from "@/lib/projects";
 import CopyButton from "@/app/components/CopyButton";
-import MainNavigation from "@/app/components/MainNavigation";
 import styles from "./Page.module.css";
 
 export const metadata = {
@@ -67,14 +66,9 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
   if (userError || !user) redirect("/login");
 
   const [
-    { data: memberRows },
     { data: projects, error: projectsError },
     { data: leads, error: leadsError },
   ] = await Promise.all([
-    supabase
-      .from("workspace_members")
-      .select("role, workspaces(id, name, slug)")
-      .eq("user_id", user.id),
     supabase
       .from("projects")
       .select("id, name, website, tracking_id, created_at")
@@ -86,10 +80,6 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
       .order("created_at", { ascending: false })
       .limit(50),
   ]);
-
-  const userWorkspaces = (memberRows ?? [])
-    .filter((r: any) => r.workspaces)
-    .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
 
   const projectList: Project[] = sortProjectsCanonically(
     (projects ?? []).map((p) => ({
@@ -113,19 +103,11 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
   const channels = [...new Set(leadList.map((l) => l.channel).filter(Boolean))].length;
 
   return (
-    <div className={styles.layout}>
-      <MainNavigation
-        userEmail={user.email}
-        workspaces={userWorkspaces}
-        activeWorkspaceId={selectedWsId}
-        projects={projectList}
-      />
-
-      <main className={styles.main}>
-        {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
-        {successMsg && <div className={styles.alertSuccess}><span>✓</span><span>{successMsg}</span></div>}
-        {projectsError && <div className={styles.alertError}><span>⚠️</span><span>Failed to load websites: {projectsError.message}</span></div>}
-        {leadsError && <div className={styles.alertError}><span>⚠️</span><span>Failed to load submissions: {leadsError.message}</span></div>}
+    <>
+      {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
+      {successMsg && <div className={styles.alertSuccess}><span>✓</span><span>{successMsg}</span></div>}
+      {projectsError && <div className={styles.alertError}><span>⚠️</span><span>Failed to load websites: {projectsError.message}</span></div>}
+      {leadsError && <div className={styles.alertError}><span>⚠️</span><span>Failed to load submissions: {leadsError.message}</span></div>}
 
         <div className={styles.pageHeaderRow}>
           <div>
@@ -266,7 +248,6 @@ export default async function DashboardWebsitesPage({ searchParams }: PageProps)
             )}
           </div>
         </div>
-      </main>
-    </div>
+    </>
   );
 }

@@ -2,9 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultWorkspace } from "@/lib/workspaces";
-import { sortProjectsCanonically } from "@/lib/projects";
 import CopyButton from "@/app/components/CopyButton";
-import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../../Page.module.css";
 
 interface Lead {
@@ -82,18 +80,13 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
   if (userError || !user) redirect("/login");
 
   const [
-    { data: memberRows },
     { data: allProjects },
     { count: webhookCount },
     { data: leadsRaw, error: leadsError },
   ] = await Promise.all([
     supabase
-      .from("workspace_members")
-      .select("role, workspaces(id, name, slug)")
-      .eq("user_id", user.id),
-    supabase
       .from("projects")
-      .select("id, workspace_id, name, website, tracking_id, user_id, created_at")
+      .select("id, workspace_id, name, website, tracking_id, user_id, created_at, workspaces(crm_connections(id, is_active))")
       .order("created_at", { ascending: true })
       .order("id", { ascending: true }),
     supabase
@@ -112,25 +105,25 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
   if (!project) notFound();
   const p = project as Project;
 
-  const userWorkspaces = (memberRows ?? [])
-    .filter((r: any) => r.workspaces)
-    .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
-
   if (!p.workspace_id) {
     const ws = await getOrCreateDefaultWorkspace(supabase, user.id, user.email, user.user_metadata?.full_name);
     await supabase.from("projects").update({ workspace_id: ws.id }).eq("id", p.id);
     p.workspace_id = ws.id;
   }
 
-  let isHubSpotConnected = false;
-  if (p.workspace_id) {
+  const rawConnections = (project as any).workspaces?.crm_connections;
+  let isHubSpotConnected = Array.isArray(rawConnections)
+    ? rawConnections.some((c: any) => c.is_active)
+    : false;
+
+  if (!isHubSpotConnected && p.workspace_id) {
     const { data: crmConn } = await supabase
       .from("crm_connections")
       .select("id, is_active")
       .eq("workspace_id", p.workspace_id)
       .eq("provider", "hubspot")
       .eq("is_active", true)
-      .single();
+      .maybeSingle();
     isHubSpotConnected = Boolean(crmConn);
   }
 
@@ -140,22 +133,11 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
   const scriptSrc = siteUrl ? `${siteUrl}/attributer.js` : "/attributer.js";
   const installSnippet = `<script src="${scriptSrc}" data-tracking-id="${p.tracking_id}"></script>`;
 
-  const projectNavList = sortProjectsCanonically(allProjects ?? []);
-
   return (
-    <div className={styles.layout}>
-      <MainNavigation
-        userEmail={user.email}
-        workspaces={userWorkspaces}
-        activeWorkspaceId={p.workspace_id || undefined}
-        projects={projectNavList}
-        activeProjectId={p.id}
-      />
-
-      <main className={styles.main}>
-        {sp.error && <div className={styles.alertError}><span>⚠️</span><span>{sp.error}</span></div>}
-        {sp.success && <div className={styles.alertSuccess}><span>✓</span><span>{sp.success}</span></div>}
-        {leadsError && <div className={styles.alertError}><span>⚠️</span><span>Failed to load verification log: {leadsError.message}</span></div>}
+    <>
+      {sp.error && <div className={styles.alertError}><span>⚠️</span><span>{sp.error}</span></div>}
+      {sp.success && <div className={styles.alertSuccess}><span>✓</span><span>{sp.success}</span></div>}
+      {leadsError && <div className={styles.alertError}><span>⚠️</span><span>Failed to load verification log: {leadsError.message}</span></div>}
 
         {/* Website Header */}
         <div className={styles.card} style={{ marginBottom: "1.5rem" }}>
@@ -333,7 +315,6 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             )}
           </div>
         </div>
-      </main>
-    </div>
+    </>
   );
 }

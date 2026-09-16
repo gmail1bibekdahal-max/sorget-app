@@ -647,6 +647,26 @@ textarea::placeholder {
   font-weight: 600;
 }
 
+.sidebar-link-pending {
+  opacity: 0.75;
+}
+
+.sidebar-nav-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid rgba(187, 12, 104, 0.25);
+  border-top-color: #BB0C68;
+  border-radius: 50%;
+  animation: sidebarSpin 0.6s linear infinite;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+@keyframes sidebarSpin {
+  to { transform: rotate(360deg); }
+}
+
 .sidebar-icon {
   display: flex;
   align-items: center;

@@ -37,6 +37,19 @@ export default function MainNavigation({
     sortProjectsCanonically(initialProjects)
   );
   const [manualExpanded, setManualExpanded] = useState<Record<string, boolean>>({});
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  // Clear pending state when navigation completes
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
+
+  const handleNavClick = (href: string) => {
+    if (href !== pathname) {
+      setPendingHref(href);
+    }
+    setMobileOpen(false);
+  };
 
   // Fetch projects from API if not provided in server props
   useEffect(() => {
@@ -154,8 +167,8 @@ export default function MainNavigation({
           <Link
             href="/dashboard"
             id="nav-dashboard-root"
-            className={`sidebar-link ${isDashboardRoot ? "sidebar-link-active" : ""}`}
-            onClick={() => setMobileOpen(false)}
+            className={`sidebar-link ${isDashboardRoot ? "sidebar-link-active" : ""} ${pendingHref === "/dashboard" ? "sidebar-link-pending" : ""}`}
+            onClick={() => handleNavClick("/dashboard")}
           >
             <span className="sidebar-icon">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -166,6 +179,7 @@ export default function MainNavigation({
               </svg>
             </span>
             <span className="sidebar-label" style={{ fontWeight: 600 }}>Dashboard</span>
+            {pendingHref === "/dashboard" && <span className="sidebar-nav-spinner" />}
           </Link>
 
           {/* Expandable Website Rows */}
@@ -211,24 +225,27 @@ export default function MainNavigation({
                       <div className="sidebar-subnav">
                         <Link
                           href={basePath}
-                          className={`sidebar-sublink ${isOverview ? "sidebar-sublink-active" : ""}`}
-                          onClick={() => setMobileOpen(false)}
+                          className={`sidebar-sublink ${isOverview ? "sidebar-sublink-active" : ""} ${pendingHref === basePath ? "sidebar-link-pending" : ""}`}
+                          onClick={() => handleNavClick(basePath)}
                         >
-                          Overview
+                          <span style={{ flex: 1 }}>Overview</span>
+                          {pendingHref === basePath && <span className="sidebar-nav-spinner" />}
                         </Link>
                         <Link
                           href={`${basePath}/integrations`}
-                          className={`sidebar-sublink ${isIntegrations ? "sidebar-sublink-active" : ""}`}
-                          onClick={() => setMobileOpen(false)}
+                          className={`sidebar-sublink ${isIntegrations ? "sidebar-sublink-active" : ""} ${pendingHref === `${basePath}/integrations` ? "sidebar-link-pending" : ""}`}
+                          onClick={() => handleNavClick(`${basePath}/integrations`)}
                         >
-                          Integrations
+                          <span style={{ flex: 1 }}>Integrations</span>
+                          {pendingHref === `${basePath}/integrations` && <span className="sidebar-nav-spinner" />}
                         </Link>
                         <Link
                           href={`${basePath}/leads`}
-                          className={`sidebar-sublink ${isLeads ? "sidebar-sublink-active" : ""}`}
-                          onClick={() => setMobileOpen(false)}
+                          className={`sidebar-sublink ${isLeads ? "sidebar-sublink-active" : ""} ${pendingHref === `${basePath}/leads` ? "sidebar-link-pending" : ""}`}
+                          onClick={() => handleNavClick(`${basePath}/leads`)}
                         >
-                          Leads
+                          <span style={{ flex: 1 }}>Leads</span>
+                          {pendingHref === `${basePath}/leads` && <span className="sidebar-nav-spinner" />}
                         </Link>
                       </div>
                     )}
@@ -248,11 +265,12 @@ export default function MainNavigation({
                 key={item.label}
                 href={item.href}
                 id={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
-                className={`sidebar-link ${item.active ? "sidebar-link-active" : ""}`}
-                onClick={() => setMobileOpen(false)}
+                className={`sidebar-link ${item.active ? "sidebar-link-active" : ""} ${pendingHref === item.href ? "sidebar-link-pending" : ""}`}
+                onClick={() => handleNavClick(item.href)}
               >
                 <span className="sidebar-icon">{item.icon}</span>
                 <span className="sidebar-label">{item.label}</span>
+                {pendingHref === item.href && <span className="sidebar-nav-spinner" />}
                 {item.external && (
                   <svg
                     width="11"

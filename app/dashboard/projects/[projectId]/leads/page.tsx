@@ -1,8 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { sortProjectsCanonically } from "@/lib/projects";
-import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../../../Page.module.css";
 
 interface Lead {
@@ -68,17 +66,12 @@ export default async function ProjectLeadsPage({ params, searchParams }: PagePro
   if (userError || !user) redirect("/login");
 
   const [
-    { data: memberRows },
     { data: allProjects },
     { data: leadsRaw, error: leadsError },
   ] = await Promise.all([
     supabase
-      .from("workspace_members")
-      .select("role, workspaces(id, name, slug)")
-      .eq("user_id", user.id),
-    supabase
       .from("projects")
-      .select("id, name, website, tracking_id, workspace_id, user_id, created_at")
+      .select("id, name, website, tracking_id, workspace_id, user_id, created_at, workspaces(workspace_members(user_id))")
       .order("created_at", { ascending: true })
       .order("id", { ascending: true }),
     supabase
@@ -91,39 +84,21 @@ export default async function ProjectLeadsPage({ params, searchParams }: PagePro
       .limit(100),
   ]);
 
-  const projectList = sortProjectsCanonically(allProjects ?? []);
-  const project = projectList.find((p) => p.id === projectId);
+  const project = (allProjects ?? []).find((p: any) => p.id === projectId);
   if (!project) notFound();
 
-  const userWorkspaces = (memberRows ?? [])
-    .filter((r: any) => r.workspaces)
-    .map((r: any) => ({
-      id: r.workspaces.id,
-      name: r.workspaces.name,
-      slug: r.workspaces.slug,
-      role: r.role,
-    }));
-
   const isOwner = project.user_id === user.id;
-  const isMember = userWorkspaces.some((w) => w.id === project.workspace_id);
+  const rawMembers = (project as any).workspaces?.workspace_members;
+  const isMember = Array.isArray(rawMembers) && rawMembers.some((m: any) => m.user_id === user.id);
   if (!isOwner && !isMember) notFound();
 
   const leads: Lead[] = leadsRaw ?? [];
 
   return (
-    <div className={styles.layout}>
-      <MainNavigation
-        userEmail={user.email}
-        workspaces={userWorkspaces}
-        activeWorkspaceId={project.workspace_id || undefined}
-        projects={projectList}
-        activeProjectId={project.id}
-      />
-
-      <main className={styles.main}>
-        {sp.error && <div className={styles.alertError}><span>⚠️</span><span>{sp.error}</span></div>}
-        {sp.success && <div className={styles.alertSuccess}><span>✓</span><span>{sp.success}</span></div>}
-        {leadsError && <div className={styles.alertError}><span>⚠️</span><span>Failed to load leads: {leadsError.message}</span></div>}
+    <>
+      {sp.error && <div className={styles.alertError}><span>⚠️</span><span>{sp.error}</span></div>}
+      {sp.success && <div className={styles.alertSuccess}><span>✓</span><span>{sp.success}</span></div>}
+      {leadsError && <div className={styles.alertError}><span>⚠️</span><span>Failed to load leads: {leadsError.message}</span></div>}
 
         <div className={styles.pageHeaderRow}>
           <div>
@@ -247,7 +222,6 @@ export default async function ProjectLeadsPage({ params, searchParams }: PagePro
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </>
   );
 }

@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../../../Page.module.css";
 
 interface PageProps {
@@ -22,40 +21,23 @@ export default async function DebuggerPage({ params }: PageProps) {
 
   const [
     { data: project, error },
-    { data: memberRows },
     { data: allProjects },
   ] = await Promise.all([
     supabase.from("projects").select("*").eq("id", id).single(),
-    supabase.from("workspace_members").select("role, workspaces(id, name, slug)").eq("user_id", user.id),
     supabase.from("projects").select("id, name, created_at").order("created_at", { ascending: true }).order("id", { ascending: true }),
   ]);
 
   if (error || !project) redirect("/dashboard");
-
-  const userWorkspaces = (memberRows ?? [])
-    .filter((r: any) => r.workspaces)
-    .map((r: any) => ({ id: r.workspaces.id, name: r.workspaces.name, slug: r.workspaces.slug, role: r.role }));
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const scriptSrc = siteUrl ? `${siteUrl}/attributer.js` : "/attributer.js";
   const snippet = `<script src="${scriptSrc}" data-tracking-id="${project.tracking_id}"></script>`;
 
   return (
-    <div className={styles.layout}>
-      <MainNavigation
-        userEmail={user.email}
-        workspaces={userWorkspaces}
-        activeWorkspaceId={project.workspace_id || undefined}
-        projects={allProjects ?? []}
-        activeProjectId={project.id}
-        activeProjectName={project.name}
-        activeProjectHref={`/dashboard/projects/${project.id}`}
-      />
+    <>
+      <Link href={`/dashboard/projects/${project.id}`} className={styles.backLink}>← Back to {project.name}</Link>
 
-      <main className={styles.main}>
-        <Link href={`/dashboard/projects/${project.id}`} className={styles.backLink}>← Back to {project.name}</Link>
-
-        <div className={styles.pageHeaderRow}>
+      <div className={styles.pageHeaderRow}>
           <div>
             <h1 className={styles.pageTitle}>Test Installation</h1>
             <p className={styles.pageSubtitle}>Verify tracking snippet detection and simulate real-time attribution capture for {project.name}.</p>
@@ -120,7 +102,6 @@ export default async function DebuggerPage({ params }: PageProps) {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+    </>
   );
 }

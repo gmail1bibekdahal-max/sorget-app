@@ -3,8 +3,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { inviteTeamMember, removeMember, revokeInvitation } from "@/app/actions/team";
 import { PLANS, resolvePlanKey } from "@/lib/billing";
-import { sortProjectsCanonically } from "@/lib/projects";
-import MainNavigation from "@/app/components/MainNavigation";
 import styles from "../Page.module.css";
 
 export const metadata = {
@@ -41,28 +39,32 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     userWorkspaces.find((w) => w.id === selectedWsId) ||
     userWorkspaces[0] || { id: "default", name: "Personal Workspace", slug: "personal", role: "owner" };
 
-  const { data: currentMembers } = await supabase
-    .from("workspace_members")
-    .select("id, user_id, role, created_at")
-    .eq("workspace_id", activeWs.id);
-
-  const { data: pendingInvitations } = await supabase
-    .from("workspace_invitations")
-    .select("id, email, role, status, token, expires_at, created_at")
-    .eq("workspace_id", activeWs.id)
-    .eq("status", "pending");
-
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("plan_id, razorpay_subscription_id, status")
-    .eq("workspace_id", activeWs.id)
-    .maybeSingle();
-
-  const { data: allProjects } = await supabase
-    .from("projects")
-    .select("id, name, created_at")
-    .order("created_at", { ascending: true })
-    .order("id", { ascending: true });
+  const [
+    { data: currentMembers },
+    { data: pendingInvitations },
+    { data: subscription },
+    { data: allProjects },
+  ] = await Promise.all([
+    supabase
+      .from("workspace_members")
+      .select("id, user_id, role, created_at")
+      .eq("workspace_id", activeWs.id),
+    supabase
+      .from("workspace_invitations")
+      .select("id, email, role, status, token, expires_at, created_at")
+      .eq("workspace_id", activeWs.id)
+      .eq("status", "pending"),
+    supabase
+      .from("subscriptions")
+      .select("plan_id, razorpay_subscription_id, status")
+      .eq("workspace_id", activeWs.id)
+      .maybeSingle(),
+    supabase
+      .from("projects")
+      .select("id, name, created_at")
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true }),
+  ]);
 
   const currentPlanKey = resolvePlanKey(subscription);
   const currentPlan = (PLANS as any)[currentPlanKey] || PLANS["1-site"];
@@ -73,18 +75,10 @@ export default async function SettingsPage({ searchParams }: PageProps) {
   ];
 
   return (
-    <div className={styles.layout}>
-      <MainNavigation
-        userEmail={user.email}
-        workspaces={userWorkspaces}
-        activeWorkspaceId={activeWs.id}
-        projects={sortProjectsCanonically(allProjects ?? [])}
-      />
-
-      <main className={styles.main}>
-        {successMsg && <div className={styles.alertSuccess}><span>✓</span><span>{successMsg}</span></div>}
-        {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
-        {noticeMsg && <div className={styles.alertInfo}><span>ℹ</span><span>{noticeMsg}</span></div>}
+    <>
+      {successMsg && <div className={styles.alertSuccess}><span>✓</span><span>{successMsg}</span></div>}
+      {errorMsg && <div className={styles.alertError}><span>⚠️</span><span>{errorMsg}</span></div>}
+      {noticeMsg && <div className={styles.alertInfo}><span>ℹ</span><span>{noticeMsg}</span></div>}
 
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Settings</h1>
@@ -230,7 +224,6 @@ export default async function SettingsPage({ searchParams }: PageProps) {
             </div>
           </div>
         )}
-      </main>
-    </div>
+    </>
   );
 }
